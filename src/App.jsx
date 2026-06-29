@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import AgentPanel from "./components/AgentPanel"
 import CodePreview from "./components/CodePreview"
 import { AlertTriangle, Folder, MousePointer, Zap } from "lucide-react"
@@ -21,6 +21,7 @@ export default function App() {
   const [liveStats, setLiveStats] = useState(null)
 
   const currentProjectRef = useRef(null)
+  const abortRef = useRef(null)
 
   const updateStatus = (id, status) => {
     setAgentStatuses((prev) => ({ ...prev, [id]: status }))
@@ -34,73 +35,108 @@ export default function App() {
     setAgentStatuses({})
     if (!currentProjectRef.current) setResult(null)
 
+    const abortCtrl = new AbortController()
+    abortRef.current = abortCtrl
+
     try {
-      const startTime = performance.now()
-      const projectId = currentProjectRef.current?.id
-
-      updateStatus("developer", "working")
-
-      let endpoint, body
-      if (projectId && currentProjectRef.current) {
-        endpoint = "/api/edit"
-        body = { projectId, instruction: text, selectedElement }
-      } else {
-        endpoint = "/api/build"
-        body = { prompt: text }
-      }
-
-      const resp = await fetch(endpoint, {
+      const resp = await fetch("/api/build", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ prompt: text }),
       })
+      if (!resp.ok) throw new Error(`Server error ${resp.status}`)
+      const { projectId } = await resp.json()
+      if (!projectId) throw new Error("No project ID returned")
 
-      if (!resp.ok) {
-        throw new Error(`Server error ${resp.status} — is the backend running? Run: npm run dev:server`)
-      }
-
-      const textBody = await resp.text()
-      if (!textBody) throw new Error("Empty response from server — backend may have timed out")
-
-      const res = JSON.parse(textBody)
-      updateStatus("developer", "done")
-
-      if (!res.ok) {
-        if (res.rate_limited) throw new Error("Rate limited by Cerebras API — retrying")
-        throw new Error(res.error || "Generation failed")
-      }
-
-      const elapsed = ((performance.now() - startTime) / 1000).toFixed(2)
-      const project = {
-        id: res.projectId,
-        name: text.slice(0, 40),
-        files: res.files,
-        changedFiles: res.files.map((f) => f.path),
-      }
-
-      const newResult = {
-        fullHtml: res.fullHtml,
-        project,
-        files: res.files,
-        timingValue: elapsed,
-        timing: { total: elapsed },
-        stats: res.stats,
-      }
-
-      setResult(newResult)
+      const project = { id: projectId, name: text.slice(0, 40), files: [] }
       setCurrentProject(project)
       currentProjectRef.current = project
-      const tokens = res.stats?.completion_tokens || 0
-      const gpuTps = res.stats?.gpu_baseline_tps || 100
-      const gpuWall = tokens > 0 ? (tokens / gpuTps).toFixed(2) : (parseFloat(elapsed) * 15).toFixed(2)
-      setGpuTime(gpuWall)
-      if (res.stats) setLiveStats(res.stats)
+
+      // Connect to SSE
+      const eventsUrl = `/api/build/${projectId}/events`
+      const eventResp = await fetch(eventsUrl)
+      if (!eventResp.ok) throw new Error("Failed to connect to event stream")
+
+      const reader = eventResp.body.getReader()
+      const decoder = new TextDecoder()
+      let buf = ""
+
+      const readLoop = async () => {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buf += decoder.decode(value, { stream: true })
+          const parts = buf.split("\n\n")
+          buf = parts.pop() || ""
+
+          for (const block of parts) {
+            const lines = block.split("\n")
+            let eventType = ""
+            let eventData = ""
+            for (const l of lines) {
+              if (l.startsWith("event: ")) eventType = l.slice(7)
+              if (l.startsWith("data: ")) eventData = l.slice(6)
+            }
+            if (!eventType || !eventData) continue
+
+            try {
+              const data = JSON.parse(eventData)
+
+              if (eventType.startsWith("agent:") && eventType.endsWith(":start")) {
+                const name = data.shortName || data.name || eventType.split(":")[1]
+                updateStatus(name, "working")
+              } else if (eventType.startsWith("agent:") && eventType.endsWith(":end")) {
+                const name = data.shortName || data.name || eventType.split(":")[1]
+                updateStatus(name, "done")
+              } else if (eventType === "build:phase") {
+                // Update phase info
+              } else if (eventType === "build:converged") {
+                // Loop converged
+              } else if (eventType === "build:error") {
+                setError(data.error || "Build failed")
+              } else if (eventType === "build:complete") {
+                // Fetch final result
+                const resultResp = await fetch(`/api/build/${projectId}/result`)
+                if (resultResp.ok) {
+                  const res = await resultResp.json()
+                  if (res.ok) {
+                    project.files = res.files || []
+                    const htmlFile = res.files?.find(f => f.path.endsWith(".html"))
+                    const elapsed = ((performance.now() - startTime) / 1000).toFixed(2)
+
+                    const newResult = {
+                      fullHtml: htmlFile?.content || res.fullHtml || "",
+                      project,
+                      files: res.files || [],
+                      timingValue: elapsed,
+                      timing: { total: elapsed },
+                      stats: res.stats,
+                    }
+                    setResult(newResult)
+                    setLiveStats(res.stats)
+                    const tokens = res.stats?.completion_tokens || 0
+                    const gpuTps = res.stats?.gpu_baseline_tps || 100
+                    setGpuTime(tokens > 0 ? (tokens / gpuTps).toFixed(2) : null)
+                  }
+                }
+              }
+            } catch {}
+          }
+        }
+      }
+
+      const startTime = performance.now()
+      readLoop().catch(() => {})
     } catch (e) {
-      setError(e.message || "Pipeline failed")
+      if (e.name !== "AbortError") setError(e.message || "Pipeline failed")
     }
 
     setLoading(false)
   }
+
+  useEffect(() => {
+    return () => abortRef.current?.abort()
+  }, [])
 
   const handleElementSelect = (el) => {
     setSelectedElement(el)
@@ -159,13 +195,11 @@ export default function App() {
           {liveStats && result && (
             <div className="stats-panel">
               <div className="stat-hero">
-                <span className="stat-big">{liveStats.per_call_tps}</span>
-                <span className="stat-unit">tok/s</span>
+                <span className="stat-big">{liveStats.completion_tokens ? `${liveStats.completion_tokens} tok` : "?"}</span>
               </div>
               <div className="stat-line">
-                {liveStats.completion_tokens} tokens · {liveStats.wall_ms}ms wall · TTFT {liveStats.ttft_ms}ms
-                {liveStats.model_speedup > 0 && (
-                  <span className="vs-text"> · {liveStats.model_speedup}x vs {liveStats.gpu_baseline_provider || "GPU"}</span>
+                {liveStats.gpu_baseline_provider && liveStats.gpu_baseline_tps && (
+                  <span className="vs-text">{liveStats.gpu_baseline_tps} tok/s · {liveStats.gpu_baseline_provider}</span>
                 )}
               </div>
             </div>
@@ -186,7 +220,7 @@ export default function App() {
                 <span>
                   Cerebras: {result.timingValue}s
                   {gpuTime && result?.stats?.gpu_baseline_provider && (
-                    <span className="vs-text"> vs {result.stats.gpu_baseline_provider}: ~{gpuTime}s ({result.stats.model_speedup}x faster)</span>
+                    <span className="vs-text"> vs {result.stats.gpu_baseline_provider}: ~{gpuTime}s</span>
                   )}
                 </span>
               </div>
