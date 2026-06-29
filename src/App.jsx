@@ -48,11 +48,12 @@ export default function App() {
     setAgentStats({})
     setBuildPhase(null)
     setLiveTime(0)
-    if (!currentProjectRef.current) setPreviewProjectId(null)
+    if (!currentProjectRef.current) {
+      setPreviewProjectId(null)
+      setPages([])
+    }
     setAgentStatuses({})
     setChangelog([])
-    setPages([])
-    setCurrentPage(null)
 
     if (timerRef.current) clearInterval(timerRef.current)
     timerRef.current = setInterval(() => setLiveTime(p => +(p + 0.1).toFixed(1)), 100)
