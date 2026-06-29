@@ -55,14 +55,13 @@ export default function MetricsPanel({ agentStats, liveTokens, liveTime, buildPh
   const avgTtft = Object.values(agentStats).filter(a => a.ttftMs).reduce((s, a, _, arr) => s + a.ttftMs / arr.length, 0) || null
 
   const agentOrder = [
-    { name: "Design Planner", label: "Design Planner", emoji: "\u270F\uFE0F", color: "#8b5cf6" },
-    { name: "Designer", label: "Designer", emoji: "\u{1F3A8}", color: "#a855f7" },
-    { name: "Security", label: "Code Reviewer", emoji: "\u{1F512}", color: "#ef4444" },
-    { name: "Debug", label: "Bug Finder", emoji: "\u{1F41B}", color: "#f59e0b" },
-    { name: "Auditor", label: "Auditor", emoji: "\u{1F4CB}", color: "#3b82f6" },
-    { name: "Unifier", label: "Unifier", emoji: "\u{1F517}", color: "#06b6d4" },
-    { name: "Coder", label: "Coder", emoji: "\u{1F4BB}", color: "#22c55e" },
-    { name: "Changelog", label: "Changelog", emoji: "\u{1F4DD}", color: "#f59e0b" },
+    { name: "Design Planner", label: "Design Planner", emoji: "\u270F\uFE0F", color: "#e6a050" },
+    { name: "Designer", label: "Designer", emoji: "\u{1F3A8}", color: "#e08040" },
+    { name: "Security", label: "Code Reviewer", emoji: "\u{1F512}", color: "#d06030" },
+    { name: "Debug", label: "Bug Finder", emoji: "\u{1F41B}", color: "#e0a030" },
+    { name: "Auditor", label: "Auditor", emoji: "\u{1F4CB}", color: "#c08030" },
+    { name: "Unifier", label: "Unifier", emoji: "\u{1F517}", color: "#d0a040" },
+    { name: "Coder", label: "Coder", emoji: "\u{1F4BB}", color: "#b0c040" },
   ]
 
   const cerebrasRatio = cerebrasTps > 0 ? Math.min(cerebrasTps / GPU_BASELINE_TPS, 1) : 0
@@ -113,8 +112,8 @@ export default function MetricsPanel({ agentStats, liveTokens, liveTime, buildPh
       <div className="m-section">
         <div className="m-section-title">TOKENS</div>
         <StatLine label="input" value={formatTokens(totalInput || liveTokens.input)} />
-        <StatLine label="output" value={formatTokens(totalOutput || liveTokens.output)} accent="#22c55e" />
-        <StatLine label="total" value={formatTokens(totalTokens)} accent="#f59e0b" />
+        <StatLine label="output" value={formatTokens(totalOutput || liveTokens.output)} accent="#4af626" />
+        <StatLine label="total" value={formatTokens(totalTokens)} accent="var(--accent)" />
       </div>
 
       {/* Timing */}
@@ -123,7 +122,7 @@ export default function MetricsPanel({ agentStats, liveTokens, liveTime, buildPh
         <StatLine label="wall" value={wallMs > 0 ? `${(wallMs / 1000).toFixed(1)}s` : "---"} accent="#6366f1" />
         <StatLine label="ttft" value={avgTtft ? formatMs(avgTtft) : "---"} />
         <StatLine label="tool calls" value={String(totalToolCalls || "---")} />
-        {buildPhase && <StatLine label="phase" value={buildPhase} accent="#06b6d4" />}
+        {buildPhase && <StatLine label="phase" value={buildPhase} accent="var(--accent)" />}
       </div>
 
       {/* Per-agent timing bars */}

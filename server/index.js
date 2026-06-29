@@ -213,57 +213,6 @@ async function captureScreenshot(projectId) {
   return screenshot.toString("base64")
 }
 
-function launchChangelog(projectId, dir, round, changedFiles) {
-  // Detached — fire and forget, doesn't block pipeline
-  getSkills().then(async skills => {
-    try {
-      emit(projectId, "agent:agent-changelog:start", { name: "Changelog", shortName: "Changelog" })
-      const agentStart = Date.now()
-
-      // Read current file contents to describe what changed
-      const fileContents = changedFiles.map(f => {
-        const fp = path.join(dir, f)
-        try {
-          const content = readFileSync(fp, "utf-8")
-          // Truncate large files to keep prompt manageable
-          const truncated = content.length > 2000 ? content.slice(0, 2000) + "\n... (truncated)" : content
-          return `=== ${f} ===\n${truncated}`
-        } catch { return `=== ${f} === (file not readable)` }
-      }).join("\n\n")
-
-      const systemPrompt = `You are a changelog writer. You describe code changes in a website build. Read the code below and produce a concise, specific changelog. Format as markdown bullet points. Start each line with "• ". Be specific: mention exact elements, colors, text content, layout changes. Do NOT add commentary — just list the changes.`
-
-      const messages = [{
-        role: "user",
-        content: `Round ${round} — files changed: ${changedFiles.join(", ")}\n\nCurrent code:\n\n${fileContents}\n\nDescribe what changed in this round. Start each line with "• ". Be specific and concrete.`,
-      }]
-
-      const result = await piAgentComplete(MODEL, messages, systemPrompt, [], "auto", projectId, "agent-changelog")
-
-      const entries = (result.fullText || "").split("\n").filter(l => l.trim())
-      const wallMs = Date.now() - agentStart
-
-      emit(projectId, "agent:agent-changelog:end", { name: "Changelog", shortName: "Changelog" })
-      emit(projectId, "agent:agent-changelog:stats", {
-        shortName: "Changelog",
-        wallMs,
-        inputTokens: result.usage?.input || 0,
-        outputTokens: result.usage?.output || 0,
-        toolCalls: 0,
-        requestCount: 1,
-        totalRequestTps: result.wallMs > 0 && result.usage?.output ? (result.usage.output / result.wallMs) * 1000 : 0,
-      })
-      emit(projectId, "build:changelog", { round, entries })
-      console.log(`[Changelog] Round ${round}: ${entries.length} entries`)
-    } catch (err) {
-      console.error(`[Changelog] Error:`, err.message)
-      emit(projectId, "build:changelog", { round, entries: ["• (changelog generation failed)"] })
-    }
-  }).catch(err => {
-    console.error(`[Changelog] Skills load error:`, err.message)
-  })
-}
-
 // ── Agent Loop (pi-ai streaming + custom tool handling) ────────
 async function piAgentComplete(model, messages, systemPrompt, tools, toolChoice, buildId, skillName) {
   const wallStart = Date.now()
@@ -559,9 +508,6 @@ async function runBuild(prompt, projectId, dir) {
   agentStats["agent-coder"] = codeResult.stats
   console.log(`[Agent] Coder done`)
 
-  // Fire changelog (detached) — text-only with code changes
-  launchChangelog(projectId, dir, 1, collectFiles(dir).map(f => f.path))
-
   // ── EARLY PREVIEW ──
   const previewFiles = collectFiles(dir)
   const pages = inlineAllPages(previewFiles)
@@ -618,9 +564,6 @@ async function runBuild(prompt, projectId, dir) {
     )
     agentStats["agent-coder"] = loopCode.stats
 
-    // Fire changelog for this iteration (detached) — text-only
-    launchChangelog(projectId, dir, iteration + 1, collectFiles(dir).map(f => f.path))
-
     const afterFiles = getFileNames(dir)
     if (beforeFiles === afterFiles) {
       console.log(`[Build] Converged — no file changes`)
@@ -640,7 +583,7 @@ async function runBuild(prompt, projectId, dir) {
   build.status = "complete"
 
   emit(projectId, "build:complete", { projectId, result: build.result })
-  console.log(`[VoCode] ${projectId}: ${files.length} files, ${stats.total_tokens} tokens, ${stats.cerebras_tps} tok/s`)
+  console.log(`[SiteForge] ${projectId}: ${files.length} files, ${stats.total_tokens} tokens, ${stats.cerebras_tps} tok/s`)
 }
 
 async function runEdit(prompt, projectId, dir, selectedElement) {
@@ -665,9 +608,6 @@ async function runEdit(prompt, projectId, dir, selectedElement) {
   )
   agentStats["agent-coder"] = codeResult.stats
   console.log(`[Edit] Coder done`)
-
-  // Fire changelog (detached) — text-only with code changes
-  launchChangelog(projectId, dir, 1, collectFiles(dir).map(f => f.path))
 
   // ── EARLY PREVIEW ──
   const previewFiles = collectFiles(dir)
@@ -738,7 +678,7 @@ async function runEdit(prompt, projectId, dir, selectedElement) {
   build.status = "complete"
 
   emit(projectId, "build:complete", { projectId, result: build.result })
-  console.log(`[VoCode] ${projectId}: ${files.length} files, ${stats.total_tokens} tokens, ${stats.cerebras_tps} tok/s`)
+  console.log(`[SiteForge] ${projectId}: ${files.length} files, ${stats.total_tokens} tokens, ${stats.cerebras_tps} tok/s`)
 }
 
 function getFileNames(dir) {
@@ -831,7 +771,7 @@ app.post("/api/build", async (req, res) => {
       : () => runBuild(prompt, projectId, dir)
 
     buildFn().catch(err => {
-      console.error(`[VoCode] Build ${projectId} failed:`, err)
+      console.error(`[SiteForge] Build ${projectId} failed:`, err)
       console.error(err.stack)
       emit(projectId, "build:error", { error: err.message })
       const b = builds.get(projectId)
@@ -840,7 +780,7 @@ app.post("/api/build", async (req, res) => {
 
     res.json({ ok: true, projectId })
   } catch (err) {
-    console.error("[VoCode] POST /api/build error:", err)
+    console.error("[SiteForge] POST /api/build error:", err)
     res.json({ ok: false, error: err.message })
   }
 })
@@ -1011,7 +951,7 @@ app.get("/api/health", (req, res) => {
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
-  console.log(`⚡ VoCode server on http://localhost:${PORT}`)
+  console.log(`⚡ SiteForge server on http://localhost:${PORT}`)
   console.log(`   Generated sites: ${GENERATED_DIR}`)
   console.log(`   GPU baseline: ${GPU_BASELINE.provider} @ ${GPU_BASELINE.tps} tok/s`)
 })

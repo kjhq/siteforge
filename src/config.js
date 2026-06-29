@@ -3,12 +3,11 @@ export const CEREBRAS_API_URL = "https://api.cerebras.ai/v1/chat/completions"
 export const MODEL = "gemma-4-31b"
 
 export const AGENTS = [
-  { id: "Design Planner", label: "Design Planner", color: "#8b5cf6", emoji: "✏️" },
-  { id: "Designer", label: "Design Reviewer", color: "#a855f7", emoji: "🎨" },
-  { id: "Security", label: "Code Reviewer", color: "#ef4444", emoji: "🔒" },
-  { id: "Debug", label: "Bug Finder", color: "#f59e0b", emoji: "🐛" },
-  { id: "Auditor", label: "Code Auditor", color: "#3b82f6", emoji: "📋" },
-  { id: "Unifier", label: "Spec Unifier", color: "#06b6d4", emoji: "🔗" },
-  { id: "Coder", label: "Code Generator", color: "#22c55e", emoji: "💻" },
-  { id: "Changelog", label: "Changelog", color: "#f59e0b", emoji: "📝" },
+  { id: "Design Planner", label: "Design Planner", color: "#e6a050", emoji: "✏️" },
+  { id: "Designer", label: "Design Reviewer", color: "#e08040", emoji: "🎨" },
+  { id: "Security", label: "Code Reviewer", color: "#d06030", emoji: "🔒" },
+  { id: "Debug", label: "Bug Finder", color: "#e0a030", emoji: "🐛" },
+  { id: "Auditor", label: "Code Auditor", color: "#c08030", emoji: "📋" },
+  { id: "Unifier", label: "Spec Unifier", color: "#d0a040", emoji: "🔗" },
+  { id: "Coder", label: "Code Generator", color: "#b0c040", emoji: "💻" },
 ]

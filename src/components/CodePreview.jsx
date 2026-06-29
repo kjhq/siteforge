@@ -137,7 +137,7 @@ export default function CodePreview({ projectId, previewVersion, onElementSelect
               sandbox="allow-scripts allow-same-origin"
               className={mobileView ? "iframe-mobile" : ""}
               onLoad={handleIframeLoad}
-              style={{ outline: el ? (hasSelection ? "3px solid #6366f1" : "2px solid #22c55e") : "none" }}
+              style={{ outline: el ? (hasSelection ? "3px solid var(--accent)" : "2px solid #4af626") : "none" }}
             />
         ) : (
           <div className="empty-state">
