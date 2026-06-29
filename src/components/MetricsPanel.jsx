@@ -48,8 +48,10 @@ export default function MetricsPanel({ agentStats, liveTokens, liveTime, buildPh
   const totalOutput = Object.values(agentStats).reduce((s, a) => s + (a.outputTokens || 0), 0)
   const totalTokens = totalInput + totalOutput
   const finalWallMs = finalStats?.wall_ms || 0
-  const wallMs = finalWallMs > 0 ? finalWallMs : liveTime * 1000
-  const cerebrasTps = wallMs > 0 && totalOutput > 0 ? Math.round((totalOutput / wallMs) * 1000) : 0
+  const wallMs = finalWallMs > 0 ? finalWallMs : 0
+  const cerebrasTps = finalStats && finalWallMs > 0 && totalOutput > 0
+    ? Math.round((totalOutput / finalWallMs) * 1000)
+    : 0
   const speedup = cerebrasTps > 0 ? +(cerebrasTps / GPU_BASELINE_TPS).toFixed(1) : 0
   const totalToolCalls = Object.values(agentStats).reduce((s, a) => s + (a.toolCalls || 0), 0)
   const avgTtft = Object.values(agentStats).filter(a => a.ttftMs).reduce((s, a, _, arr) => s + a.ttftMs / arr.length, 0) || null

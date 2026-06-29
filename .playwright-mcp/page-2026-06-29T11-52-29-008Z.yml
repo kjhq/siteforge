@@ -1,0 +1,203 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "VoCode" [level=1] [ref=e5]:
+      - img [ref=e6]
+      - text: VoCode
+    - paragraph [ref=e8]: Multi-Agent Website Builder · Gemma 4 on Cerebras
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - generic [ref=e13]:
+            - img [ref=e14]
+            - generic [ref=e16]: project-1782733926118-4
+          - generic [ref=e17]:
+            - img [ref=e18]
+            - generic [ref=e21]: No element selected
+        - generic [ref=e22]:
+          - textbox "e.g. Make the selected text blue..." [ref=e78]: A simple personal blog page with a header, 3 blog post cards, and a footer. Blue and white theme.
+          - button "Update" [ref=e79] [cursor=pointer]
+      - generic [ref=e25]:
+        - heading "Multi-Agent Pipeline" [level=3] [ref=e26]
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e30]: 🎨
+            - generic [ref=e31]:
+              - generic [ref=e32]: Design Reviewer
+              - generic [ref=e33]: Complete ✓
+          - generic [ref=e35]:
+            - generic [ref=e37]: 🔒
+            - generic [ref=e38]:
+              - generic [ref=e39]: Security Auditor
+              - generic [ref=e40]: Complete ✓
+          - generic [ref=e42]:
+            - generic [ref=e44]: 🐛
+            - generic [ref=e45]:
+              - generic [ref=e46]: Bug Finder
+              - generic [ref=e47]: Complete ✓
+          - generic [ref=e49]:
+            - generic [ref=e51]: 📋
+            - generic [ref=e52]:
+              - generic [ref=e53]: Code Auditor
+              - generic [ref=e54]: Complete ✓
+          - generic [ref=e56]:
+            - generic [ref=e58]: 🔗
+            - generic [ref=e59]:
+              - generic [ref=e60]: Spec Unifier
+              - generic [ref=e61]: Complete ✓
+          - generic [ref=e63]:
+            - generic [ref=e65]: 💻
+            - generic [ref=e66]:
+              - generic [ref=e67]: Code Generator
+              - generic [ref=e68]: Complete ✓
+        - generic [ref=e86]:
+          - generic [ref=e87]: "Total time:"
+          - generic [ref=e88]: 17.7s
+      - generic [ref=e89]:
+        - generic [ref=e90]:
+          - img [ref=e91]
+          - generic [ref=e93]: METRICS
+        - generic [ref=e94]:
+          - generic [ref=e95]:
+            - generic [ref=e96]:
+              - img [ref=e97]
+              - generic [ref=e99]: CEREBRAS
+            - generic [ref=e101]: 333 tok/s
+          - generic [ref=e102]:
+            - generic [ref=e103]:
+              - img [ref=e104]
+              - generic [ref=e106]: GPU BASE
+            - generic [ref=e109]: 126 tok/s
+          - generic [ref=e169]: 2.6x FASTER
+        - generic [ref=e110]:
+          - generic [ref=e111]: TOKENS
+          - generic [ref=e112]:
+            - generic [ref=e113]: input
+            - generic [ref=e115]: 27.5k
+          - generic [ref=e116]:
+            - generic [ref=e117]: output
+            - generic [ref=e119]: 5.9k
+          - generic [ref=e120]:
+            - generic [ref=e121]: total
+            - generic [ref=e123]: 33.4k
+        - generic [ref=e124]:
+          - generic [ref=e125]: TIMING
+          - generic [ref=e126]:
+            - generic [ref=e127]: wall
+            - generic [ref=e129]: 17.7s
+          - generic [ref=e130]:
+            - generic [ref=e131]: ttft
+            - generic [ref=e133]: 438.8ms
+          - generic [ref=e134]:
+            - generic [ref=e135]: tool calls
+            - generic [ref=e137]: "34"
+          - generic [ref=e138]:
+            - generic [ref=e139]: phase
+            - generic [ref=e141]: review-loop
+        - generic [ref=e142]:
+          - generic [ref=e143]: AGENTS
+          - generic [ref=e144]:
+            - generic [ref=e145]: 🎨 Designer
+            - generic [ref=e146]: █░░░░░░░░░░░░░░░
+            - generic [ref=e147]: 2.32s
+          - generic [ref=e148]:
+            - generic [ref=e149]: 🔒 Security
+            - generic [ref=e150]: █░░░░░░░░░░░░░░░
+            - generic [ref=e151]: 2.28s
+          - generic [ref=e152]:
+            - generic [ref=e153]: 🐛 Debug
+            - generic [ref=e154]: █░░░░░░░░░░░░░░░
+            - generic [ref=e155]: 2.25s
+          - generic [ref=e156]:
+            - generic [ref=e157]: 📋 Auditor
+            - generic [ref=e158]: █░░░░░░░░░░░░░░░
+            - generic [ref=e159]: 2.36s
+          - generic [ref=e160]:
+            - generic [ref=e161]: 🔗 Unifier
+            - generic [ref=e162]: █░░░░░░░░░░░░░░░
+            - generic [ref=e163]: 2.33s
+          - generic [ref=e164]:
+            - generic [ref=e165]: 💻 Coder
+            - generic [ref=e166]: ██░░░░░░░░░░░░░░
+            - generic [ref=e167]: 3.12s
+        - generic [ref=e170]:
+          - generic [ref=e171]: OUTPUT
+          - generic [ref=e172]:
+            - generic [ref=e173]:
+              - img [ref=e174]
+              - generic [ref=e177]: index.html
+              - generic [ref=e178]: 4.7kb
+            - generic [ref=e179]:
+              - img [ref=e180]
+              - generic [ref=e183]: script.js
+              - generic [ref=e184]: 1.3kb
+            - generic [ref=e185]:
+              - img [ref=e186]
+              - generic [ref=e189]: styles.css
+              - generic [ref=e190]: 5.1kb
+    - generic [ref=e71]:
+      - heading "Live Preview" [level=3] [ref=e73]
+      - iframe [ref=e191]:
+        - generic [active] [ref=f5e1]:
+          - banner [ref=f5e2]:
+            - generic [ref=f5e3]:
+              - link "DevBlog" [ref=f5e5] [cursor=pointer]:
+                - /url: "#"
+              - navigation [ref=f5e6]:
+                - list [ref=f5e7]:
+                  - listitem [ref=f5e8]:
+                    - link "Home" [ref=f5e9] [cursor=pointer]:
+                      - /url: "#home"
+                  - listitem [ref=f5e10]:
+                    - link "Articles" [ref=f5e11] [cursor=pointer]:
+                      - /url: "#articles"
+                  - listitem [ref=f5e12]:
+                    - link "About" [ref=f5e13] [cursor=pointer]:
+                      - /url: "#about"
+                  - listitem [ref=f5e14]:
+                    - link "Contact" [ref=f5e15] [cursor=pointer]:
+                      - /url: "#contact"
+          - main [ref=f5e16]:
+            - generic [ref=f5e18]:
+              - heading "Exploring the Intersections of Tech & Design" [level=1] [ref=f5e19]
+              - paragraph [ref=f5e20]: A collection of thoughts on modern web development, accessibility, and user experience.
+            - generic [ref=f5e22]:
+              - heading "Latest Articles" [level=2] [ref=f5e23]
+              - generic [ref=f5e24]:
+                - article [ref=f5e25] [cursor=pointer]:
+                  - img "Laptop with code on screen" [ref=f5e27]
+                  - generic [ref=f5e28]:
+                    - generic [ref=f5e29]: Development
+                    - time [ref=f5e30]: October 24, 2023
+                    - heading "Mastering CSS Grid and Flexbox" [level=3] [ref=f5e31]
+                    - paragraph [ref=f5e32]: Learn how to build complex, responsive layouts with ease using the power of modern CSS layout modules.
+                    - link "Read More →" [ref=f5e33]:
+                      - /url: "#"
+                - article [ref=f5e34] [cursor=pointer]:
+                  - img "Close up of computer screen with code" [ref=f5e36]
+                  - generic [ref=f5e37]:
+                    - generic [ref=f5e38]: Security
+                    - time [ref=f5e39]: November 12, 2023
+                    - heading "Introduction to Content Security Policy" [level=3] [ref=f5e40]
+                    - paragraph [ref=f5e41]: Protect your users from XSS attacks by implementing a robust CSP strategy for your web applications.
+                    - link "Read More →" [ref=f5e42]:
+                      - /url: "#"
+                - article [ref=f5e43] [cursor=pointer]:
+                  - img "Abstract colorful design" [ref=f5e45]
+                  - generic [ref=f5e46]:
+                    - generic [ref=f5e47]: UI/UX
+                    - time [ref=f5e48]: December 5, 2023
+                    - heading "The Psychology of Color in Web Design" [level=3] [ref=f5e49]
+                    - paragraph [ref=f5e50]: How different color palettes influence user behavior and emotion in digital product interfaces.
+                    - link "Read More →" [ref=f5e51]:
+                      - /url: "#"
+          - contentinfo [ref=f5e52]:
+            - generic [ref=f5e53]:
+              - paragraph [ref=f5e54]: © 2023 DevBlog. Built with precision and care.
+              - generic [ref=f5e55]:
+                - link "Privacy Policy" [ref=f5e56] [cursor=pointer]:
+                  - /url: "#"
+                - link "Terms of Service" [ref=f5e57] [cursor=pointer]:
+                  - /url: "#"
+                - link "Twitter" [ref=f5e58] [cursor=pointer]:
+                  - /url: "#"
