@@ -230,7 +230,7 @@ export default function App() {
 
         <div className="right-panel">
           <CodePreview
-            code={result?.fullHtml}
+            projectId={currentProject?.id}
             onElementSelect={handleElementSelect}
             selectedElement={selectedElement}
           />

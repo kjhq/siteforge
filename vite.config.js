@@ -11,6 +11,10 @@ export default defineConfig({
         timeout: 180000,
         proxyTimeout: 180000,
       },
+      '/preview': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
     },
   },
 })

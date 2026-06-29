@@ -489,6 +489,27 @@ app.get("/api/build/:projectId/result", (req, res) => {
   })
 })
 
+const INJECTION_SCRIPT = `<script>
+(function(){var p=null;document.addEventListener('mouseover',function(e){var c=e.target;if(c===p)return;p=c;var r=c.getBoundingClientRect();parent.postMessage({type:'hover',tag:c.tagName.toLowerCase(),id:c.id||null,classes:Array.from(c.classList||[]),text:(c.textContent||'').trim().slice(0,80),rect:{top:r.top,left:r.left,width:r.width,height:r.height}},'*')},true);document.addEventListener('click',function(e){var el=e.target;var r=el.getBoundingClientRect();var cs={};try{var s=getComputedStyle(el);cs.color=s.color;cs.fontSize=s.fontSize}catch{}parent.postMessage({type:'select',tag:el.tagName.toLowerCase(),id:el.id||null,classes:Array.from(el.classList||[]),text:(el.textContent||'').trim().slice(0,80),rect:{top:r.top,left:r.left,width:r.width,height:r.height},styles:cs},'*');e.preventDefault();e.stopPropagation()},true)})()
+</script>`
+
+app.get("/preview/:projectId", (req, res) => {
+  const dir = path.join(GENERATED_DIR, req.params.projectId)
+  const indexPath = path.join(dir, "index.html")
+  if (!existsSync(indexPath)) return res.status(404).send("Not found")
+
+  let html = readFileSync(indexPath, "utf-8")
+  html = html.replace("</body>", INJECTION_SCRIPT + "\n</body>")
+  res.set("Content-Type", "text/html")
+  res.send(html)
+})
+
+app.get("/preview/:projectId/:file", (req, res) => {
+  const filePath = path.join(GENERATED_DIR, req.params.projectId, req.params.file)
+  if (!existsSync(filePath)) return res.status(404).send("Not found")
+  res.sendFile(filePath)
+})
+
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, model: "gemma-4-31b", provider: "cerebras" })
 })
