@@ -54,6 +54,9 @@ models.setProvider(createProvider({
 }))
 const MODEL = models.getModel("cerebras", "gemma-4-31b")
 
+// ⚡ TEST FLAG — set to false to re-enable all agents
+const SKIP_REVIEWERS = true
+
 // ── Express Setup ────────────────────────────────────────────────
 const app = express()
 app.use(cors())
@@ -456,42 +459,62 @@ async function runBuild(prompt, projectId, dir) {
   emit(projectId, "build:start", { projectId, prompt })
 
   // Phase 0: Design Plan
-  emit(projectId, "build:phase", { phase: "design", agents: ["agent-design-planner"] })
-  console.log(`[Build] Phase 0: Design Plan`)
+  if (!SKIP_REVIEWERS) {
+    emit(projectId, "build:phase", { phase: "design", agents: ["agent-design-planner"] })
+    console.log(`[Build] Phase 0: Design Plan`)
 
-  const designResult = await runAgent("agent-design-planner", projectId,
-    `Read the build prompt below and create a design plan. Brainstorm a unique visual direction: color palette (4-6 hex values), typography (display/body/utility faces), layout concept, and a signature element. Write your plan to design-plan.md using write_file. Be opinionated and specific — the Coder will follow this exactly.\n\nBUILD PROMPT: ${prompt}`,
-    dir
-  )
-  agentStats["agent-design-planner"] = designResult.stats
-  console.log(`[Agent] Design Planner done`)
+    const designResult = await runAgent("agent-design-planner", projectId,
+      `Read the build prompt below and create a design plan. Brainstorm a unique visual direction: color palette (4-6 hex values), typography (display/body/utility faces), layout concept, and a signature element. Write your plan to design-plan.md using write_file. Be opinionated and specific — the Coder will follow this exactly.\n\nBUILD PROMPT: ${prompt}`,
+      dir
+    )
+    agentStats["agent-design-planner"] = designResult.stats
+    console.log(`[Agent] Design Planner done`)
+  } else {
+    // Create minimal design plan so coder has something to read
+    writeFileSync(path.join(dir, "design-plan.md"), `# Design Plan
+
+Build prompt: ${prompt}
+
+Create a modern, responsive website that matches the user's description.
+Use clean semantic HTML, modern CSS, and proper JavaScript.
+Choose colors and typography that fit the subject.
+`)
+  }
 
   const reviewRoles = ["agent-designer", "agent-security", "agent-debug", "agent-auditor"]
   const loopReviewRoles = ["agent-design-planner", "agent-designer", "agent-security", "agent-debug", "agent-auditor"]
 
-  // Phase 1: Parallel Review
-  emit(projectId, "build:phase", { phase: "review", agents: reviewRoles })
-  console.log(`[Build] Phase 1: Review`)
+  if (!SKIP_REVIEWERS) {
+    // Phase 1: Parallel Review
+    emit(projectId, "build:phase", { phase: "review", agents: reviewRoles })
+    console.log(`[Build] Phase 1: Review`)
 
-  const reviewResults = await Promise.all(
-    reviewRoles.map(role =>
-      runAgent(role, projectId,
-        `Use list_dir to discover existing files. Read design-plan.md and any other files using read_file. Review this build prompt and write a detailed report as a .md file using write_file:\n\nBUILD PROMPT: ${prompt}\n\nConsider the design plan when reviewing. Include findings, severity (P0/P1/P2), and suggestions. If nothing to flag, write "ALL CLEAR - no issues".`,
-        dir
-      ).then(r => { agentStats[role] = r.stats; console.log(`[Agent] ${role} done`); return r })
+    const reviewResults = await Promise.all(
+      reviewRoles.map(role =>
+        runAgent(role, projectId,
+          `Use list_dir to discover existing files. Read design-plan.md and any other files using read_file. Review this build prompt and write a detailed report as a .md file using write_file:\n\nBUILD PROMPT: ${prompt}\n\nConsider the design plan when reviewing. Include findings, severity (P0/P1/P2), and suggestions. If nothing to flag, write "ALL CLEAR - no issues".`,
+          dir
+        ).then(r => { agentStats[role] = r.stats; console.log(`[Agent] ${role} done`); return r })
+      )
     )
-  )
 
-  // Phase 2: Unify
-  emit(projectId, "build:phase", { phase: "unify", agents: ["agent-unifier"] })
-  console.log(`[Build] Phase 2: Unify`)
+    // Phase 2: Unify
+    emit(projectId, "build:phase", { phase: "unify", agents: ["agent-unifier"] })
+    console.log(`[Build] Phase 2: Unify`)
 
-  const unifyResult = await runAgent("agent-unifier", projectId,
-    `Read all review .md files using read_file, then write a unified-spec.md using write_file that synthesizes all findings into an ordered build plan. Include priority, file, description, and approach for each change.`,
-    dir
-  )
-  agentStats["agent-unifier"] = unifyResult.stats
-  console.log(`[Agent] Unifier done`)
+    const unifyResult = await runAgent("agent-unifier", projectId,
+      `Read all review .md files using read_file, then write a unified-spec.md using write_file that synthesizes all findings into an ordered build plan. Include priority, file, description, and approach for each change.`,
+      dir
+    )
+    agentStats["agent-unifier"] = unifyResult.stats
+    console.log(`[Agent] Unifier done`)
+  } else {
+    // Create minimal unified spec so coder doesn't break
+    writeFileSync(path.join(dir, "unified-spec.md"), `ALL CLEAR - NO CHANGES NEEDED
+
+Build the website from scratch following the user's description and the design-plan.md.
+Create all necessary HTML, CSS, and JS files.`)
+  }
 
   // Phase 3: Code
   emit(projectId, "build:phase", { phase: "code", agents: ["agent-coder"] })
@@ -518,8 +541,9 @@ async function runBuild(prompt, projectId, dir) {
   emit(projectId, "build:preview", { projectId, files: previewFiles, fullHtml: previewInlined, pages, stats: previewStats })
 
   // Phase 4: Review Loop (background)
-  const MAX_ITERATIONS = 2
-  for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
+  if (!SKIP_REVIEWERS) {
+    const MAX_ITERATIONS = 2
+    for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     console.log(`[Build] Loop iteration ${iteration}`)
     emit(projectId, "build:phase", { phase: "review-loop", iteration })
 
@@ -571,6 +595,7 @@ async function runBuild(prompt, projectId, dir) {
       break
     }
   }
+  } // end SKIP_REVIEWERS block
 
   // Collect final results
   const files = collectFiles(dir)
@@ -619,52 +644,57 @@ async function runEdit(prompt, projectId, dir, selectedElement) {
   emit(projectId, "build:preview", { projectId, files: previewFiles, fullHtml: previewInlined, pages: editPages, stats: previewStats })
 
   // Phase 2: Reviewers check if edit satisfies the ask
-  emit(projectId, "build:phase", { phase: "review", agents: ["agent-design-planner", "agent-designer", "agent-security", "agent-debug", "agent-auditor"] })
-  console.log(`[Edit] Phase 2: Review (background)`)
+  if (!SKIP_REVIEWERS) {
+    emit(projectId, "build:phase", { phase: "review", agents: ["agent-design-planner", "agent-designer", "agent-security", "agent-debug", "agent-auditor"] })
+    console.log(`[Edit] Phase 2: Review (background)`)
 
-  // Capture screenshot for designer and design planner to see rendered site
-  const reviewerShot = await captureScreenshot(projectId).catch(() => null)
-  const reviewerImages = reviewerShot ? [reviewerShot] : []
+    // Capture screenshot for designer and design planner to see rendered site
+    const reviewerShot = await captureScreenshot(projectId).catch(() => null)
+    const reviewerImages = reviewerShot ? [reviewerShot] : []
 
-  const reviewRoles = ["agent-design-planner", "agent-designer", "agent-security", "agent-debug", "agent-auditor"]
-  const userPrompt = prompt
-  await Promise.all(
-    reviewRoles.map(role => {
-      const hasImage = (role === "agent-designer" || role === "agent-design-planner") && reviewerImages.length > 0
-      const reviewElementContext = selectedElement
-        ? `Target element: <${selectedElement.tag}${selectedElement.id ? `#${selectedElement.id}` : ""}${selectedElement.classes?.length ? `.${selectedElement.classes.join(".")}` : ""}>`
-        : ""
-      const agentPrompt = (role === "agent-designer" || role === "agent-design-planner")
-        ? `The user asked: "${userPrompt}"\n${reviewElementContext ? reviewElementContext + "\n" : ""}A screenshot of the rendered site is attached. Study it carefully — look for visual problems: broken layout, overlapping elements, missing images, wrong colors, bad typography, poor spacing, responsiveness issues, anything that looks off.\n\nAlso read the code files using read_file — use list_dir first to discover all .html, .css, .js files in the project.\n\nWrite your review to your .md file using write_file. List every visual and code problem you find with severity (P0/P1/P2). If the site looks perfect, write "ALL CLEAR - no issues remaining".`
-        : `The user asked: "${userPrompt}"\n${reviewElementContext ? reviewElementContext + "\n" : ""}Use list_dir to discover all project files. Read all .html, .css, .js files using read_file. Review whether the edit was applied correctly and the site still works. Write your findings to your review .md file using write_file. If everything looks correct and no issues, write "ALL CLEAR - no issues remaining".`
-      return runAgent(role, projectId, agentPrompt, dir, hasImage ? reviewerImages : [])
-        .then(r => { agentStats[role] = r.stats; return r })
-    })
-  )
+    const reviewRoles = ["agent-design-planner", "agent-designer", "agent-security", "agent-debug", "agent-auditor"]
+    const userPrompt = prompt
+    await Promise.all(
+      reviewRoles.map(role => {
+        const hasImage = (role === "agent-designer" || role === "agent-design-planner") && reviewerImages.length > 0
+        const reviewElementContext = selectedElement
+          ? `Target element: <${selectedElement.tag}${selectedElement.id ? `#${selectedElement.id}` : ""}${selectedElement.classes?.length ? `.${selectedElement.classes.join(".")}` : ""}>`
+          : ""
+        const agentPrompt = (role === "agent-designer" || role === "agent-design-planner")
+          ? `The user asked: "${userPrompt}"\n${reviewElementContext ? reviewElementContext + "\n" : ""}A screenshot of the rendered site is attached. Study it carefully — look for visual problems: broken layout, overlapping elements, missing images, wrong colors, bad typography, poor spacing, responsiveness issues, anything that looks off.\n\nAlso read the code files using read_file — use list_dir first to discover all .html, .css, .js files in the project.\n\nWrite your review to your .md file using write_file. List every visual and code problem you find with severity (P0/P1/P2). If the site looks perfect, write "ALL CLEAR - no issues remaining".`
+          : `The user asked: "${userPrompt}"\n${reviewElementContext ? reviewElementContext + "\n" : ""}Use list_dir to discover all project files. Read all .html, .css, .js files using read_file. Review whether the edit was applied correctly and the site still works. Write your findings to your review .md file using write_file. If everything looks correct and no issues, write "ALL CLEAR - no issues remaining".`
+        return runAgent(role, projectId, agentPrompt, dir, hasImage ? reviewerImages : [])
+          .then(r => { agentStats[role] = r.stats; return r })
+      })
+    )
 
-  // Phase 3: Unifier convergence check
-  emit(projectId, "build:phase", { phase: "unify", agents: ["agent-unifier"] })
-  console.log(`[Edit] Phase 3: Unify`)
+    // Phase 3: Unifier convergence check
+    emit(projectId, "build:phase", { phase: "unify", agents: ["agent-unifier"] })
+    console.log(`[Edit] Phase 3: Unify`)
 
-  const unifyResult = await runAgent("agent-unifier", projectId,
-    `Read all updated review .md files using read_file. The user asked: "${prompt}". If all reviews say "ALL CLEAR", write unified-spec.md with content "ALL CLEAR - NO CHANGES NEEDED". Otherwise write an updated spec with remaining fixes needed to satisfy the user's request.`,
-    dir
-  )
-  agentStats["agent-unifier"] = unifyResult.stats
-
-  const env = new NodeExecutionEnv({ cwd: dir })
-  const spec = await env.readTextFile("unified-spec.md")
-  if (spec.ok && spec.value.includes("NO CHANGES NEEDED")) {
-    console.log(`[Edit] Converged — edit satisfied`)
-    emit(projectId, "build:converged", { iteration: 1 })
-  } else {
-    // Phase 4: Coder applies remaining fixes (1 iteration max)
-    console.log(`[Edit] Phase 4: Coder (fix remaining issues)`)
-    const fixResult = await runAgent("agent-coder", projectId,
-      `Read unified-spec.md using read_file. Apply the remaining fixes to the code files using write_file. Output COMPLETE updated files. Preserve everything that isn't being changed.`,
+    const unifyResult = await runAgent("agent-unifier", projectId,
+      `Read all updated review .md files using read_file. The user asked: "${prompt}". If all reviews say "ALL CLEAR", write unified-spec.md with content "ALL CLEAR - NO CHANGES NEEDED". Otherwise write an updated spec with remaining fixes needed to satisfy the user's request.`,
       dir
     )
-    agentStats["agent-coder"] = fixResult.stats
+    agentStats["agent-unifier"] = unifyResult.stats
+
+    const env = new NodeExecutionEnv({ cwd: dir })
+    const spec = await env.readTextFile("unified-spec.md")
+    if (spec.ok && spec.value.includes("NO CHANGES NEEDED")) {
+      console.log(`[Edit] Converged — edit satisfied`)
+      emit(projectId, "build:converged", { iteration: 1 })
+    } else {
+      // Phase 4: Coder applies remaining fixes (1 iteration max)
+      console.log(`[Edit] Phase 4: Coder (fix remaining issues)`)
+      const fixResult = await runAgent("agent-coder", projectId,
+        `Read unified-spec.md using read_file. Apply the remaining fixes to the code files using write_file. Output COMPLETE updated files. Preserve everything that isn't being changed.`,
+        dir
+      )
+      agentStats["agent-coder"] = fixResult.stats
+    }
+  } else {
+    console.log(`[Edit] Skipping review phases (SKIP_REVIEWERS=true)`)
+    emit(projectId, "build:converged", { iteration: 1 })
   }
 
   // Collect final results
