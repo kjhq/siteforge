@@ -147,8 +147,10 @@ export default function App() {
                 })
               } else if (eventType === "build:error") {
                 setError(data.error || "Build failed")
+                setLoading(false)
               } else if (eventType === "build:complete") {
                 if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+                setLoading(false)
                 const resultResp = await fetch(`/api/build/${projectId}/result`)
                 if (resultResp.ok) {
                   const res = await resultResp.json()
@@ -181,9 +183,8 @@ export default function App() {
       readLoop().catch(() => {})
     } catch (e) {
       if (e.name !== "AbortError") setError(e.message || "Pipeline failed")
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   useEffect(() => {
