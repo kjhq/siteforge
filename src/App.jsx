@@ -37,34 +37,36 @@ export default function App() {
     try {
       const startTime = performance.now()
       const projectId = currentProjectRef.current?.id
-      let res
 
+      updateStatus("developer", "working")
+
+      let endpoint, body
       if (projectId && currentProjectRef.current) {
-        updateStatus("developer", "working")
-        res = await fetch("/api/edit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            projectId,
-            instruction: text,
-            selectedElement,
-          }),
-        }).then((r) => r.json())
-        updateStatus("developer", "done")
+        endpoint = "/api/edit"
+        body = { projectId, instruction: text, selectedElement }
       } else {
-        updateStatus("developer", "working")
-        res = await fetch("/api/build", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: text }),
-        }).then((r) => r.json())
-        updateStatus("developer", "done")
+        endpoint = "/api/build"
+        body = { prompt: text }
       }
 
+      const resp = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+
+      if (!resp.ok) {
+        throw new Error(`Server error ${resp.status} — is the backend running? Run: npm run dev:server`)
+      }
+
+      const textBody = await resp.text()
+      if (!textBody) throw new Error("Empty response from server — backend may have timed out")
+
+      const res = JSON.parse(textBody)
+      updateStatus("developer", "done")
+
       if (!res.ok) {
-        if (res.rate_limited) {
-          throw new Error("Rate limited by Cerebras API — waiting and retrying")
-        }
+        if (res.rate_limited) throw new Error("Rate limited by Cerebras API — retrying")
         throw new Error(res.error || "Generation failed")
       }
 
