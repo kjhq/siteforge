@@ -3,6 +3,7 @@ import { AGENTS } from "../config"
 const STATUS_LABELS = {
   idle: "Standby",
   working: "Processing...",
+  "rate-limited": "Waiting on quota...",
   done: "Complete ✓",
   error: "Error ✗",
 }
@@ -30,7 +31,7 @@ export default function AgentPanel({ agentStatuses, timing }) {
                   className="agent-bar-fill"
                   style={{
                     background: agent.color,
-                    width: status === "done" ? "100%" : status === "working" ? "50%" : "0%",
+                    width: status === "done" ? "100%" : status === "working" || status === "rate-limited" ? "50%" : "0%",
                   }}
                 />
               </div>

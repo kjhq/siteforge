@@ -1,0 +1,15 @@
+{
+  "name": "vocode-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node index.js",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "@earendil-works/pi-ai": "^0.80.2",
+    "@earendil-works/pi-agent-core": "^0.80.2"
+  }
+}

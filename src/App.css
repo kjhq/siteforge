@@ -63,6 +63,27 @@ body {
 }
 
 /* Input Section */
+.edit-context-card {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.edit-context-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text2);
+  font-size: 0.82rem;
+}
+
+.edit-context-row svg { color: var(--accent); }
+
 .input-row { display: flex; gap: 8px; }
 .input-row input {
   flex: 1;
@@ -153,6 +174,7 @@ body {
 }
 
 .agent-card.working { outline: 2px solid var(--accent); outline-offset: 2px; }
+.agent-card.rate-limited { outline: 2px solid #f59e0b; outline-offset: 2px; }
 .agent-card.done { opacity: 0.7; }
 
 .agent-icon {
@@ -193,6 +215,36 @@ body {
 }
 .timing-label { color: var(--text2); font-size: 0.85rem; }
 .timing-value { color: var(--accent); font-weight: 700; font-size: 1.1rem; }
+
+/* Speed Stats */
+.stats-panel {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+}
+.stat-hero {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.stat-big {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #f59e0b;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.stat-unit {
+  font-size: 0.85rem;
+  color: var(--text2);
+  font-weight: 600;
+}
+.stat-line {
+  font-size: 0.8rem;
+  color: var(--text2);
+  margin-top: 4px;
+}
 
 /* Results Meta */
 .results-meta {
