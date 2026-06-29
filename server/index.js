@@ -365,13 +365,14 @@ async function runBuild(prompt, projectId, dir) {
   // Collect results
   const files = collectFiles(dir)
   const htmlFile = files.find(f => f.path.endsWith(".html"))
+  const inlinedHtml = inlineAssets(htmlFile?.content || "", files)
   const stats = {
     gpu_baseline_tps: GPU_BASELINE.tps,
     gpu_baseline_provider: GPU_BASELINE.provider,
     completion_tokens: htmlFile ? Math.ceil(htmlFile.content.length / 4) : 0,
   }
 
-  build.result = { files, fullHtml: htmlFile?.content || "", stats }
+  build.result = { files, fullHtml: inlinedHtml, stats }
   build.status = "complete"
 
   emit(projectId, "build:complete", { projectId, result: build.result })
@@ -395,6 +396,36 @@ function collectFiles(dir) {
     }
     return result
   } catch { return [] }
+}
+
+function inlineAssets(html, files) {
+  if (!html) return ""
+  const css = {}
+  const js = {}
+  for (const f of files) {
+    if (f.path.endsWith(".css")) css[f.path] = f.content
+    if (f.path.endsWith(".js")) js[f.path] = f.content
+  }
+
+  let result = html.replace(
+    /<link[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*\/?>/gi,
+    (match, href) => {
+      if (href.startsWith("http") || href.startsWith("//")) return match
+      const content = css[href]
+      return content ? `<style>\n${content}\n</style>` : match
+    }
+  )
+
+  result = result.replace(
+    /<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi,
+    (match, src) => {
+      if (src.startsWith("http") || src.startsWith("//")) return match
+      const content = js[src]
+      return content ? `<script>\n${content}\n</script>` : match
+    }
+  )
+
+  return result
 }
 
 // ── API Endpoints ─────────────────────────────────────────────
