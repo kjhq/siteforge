@@ -1,10 +1,11 @@
 import { useRef, useEffect, useState } from "react"
-import { MousePointer, X } from "lucide-react"
+import { MousePointer, X, Smartphone, Monitor } from "lucide-react"
 
 export default function CodePreview({ projectId, previewVersion, onElementSelect, selectedElement }) {
   const iframeRef = useRef(null)
   const [copied, setCopied] = useState(false)
   const [hovered, setHovered] = useState(null)
+  const [mobileView, setMobileView] = useState(false)
 
   useEffect(() => {
     if (!projectId || !iframeRef.current) return
@@ -31,6 +32,15 @@ export default function CodePreview({ projectId, previewVersion, onElementSelect
     <div className="code-preview">
       <div className="preview-header">
         <h3>Live Preview</h3>
+        {projectId && (
+          <button
+            className={`preview-toggle ${mobileView ? "active" : ""}`}
+            onClick={() => setMobileView(!mobileView)}
+            title={mobileView ? "Desktop view" : "Mobile view"}
+          >
+            {mobileView ? <Monitor size={14} /> : <Smartphone size={14} />}
+          </button>
+        )}
       </div>
 
       {el && (
@@ -49,12 +59,13 @@ export default function CodePreview({ projectId, previewVersion, onElementSelect
         </div>
       )}
 
-      <div className="preview-frame">
+      <div className={`preview-frame ${mobileView ? "mobile" : ""}`}>
         {projectId ? (
           <iframe
             ref={iframeRef}
             title="preview"
             sandbox="allow-scripts allow-same-origin"
+            className={mobileView ? "iframe-mobile" : ""}
             style={{ outline: el ? (hasSelection ? "3px solid #6366f1" : "2px solid #22c55e") : "none" }}
           />
         ) : (

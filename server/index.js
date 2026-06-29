@@ -213,39 +213,30 @@ async function captureScreenshot(projectId) {
   return screenshot.toString("base64")
 }
 
-function launchChangelog(projectId, dir, round, beforeScreenshot, afterScreenshot, changedFiles) {
+function launchChangelog(projectId, dir, round, changedFiles) {
   // Detached — fire and forget, doesn't block pipeline
   getSkills().then(async skills => {
     try {
-      const agentName = "changelog"
       emit(projectId, "agent:agent-changelog:start", { name: "Changelog", shortName: "Changelog" })
       const agentStart = Date.now()
 
-      const fileSummary = changedFiles.map(f => f.path).join(", ")
-      const systemPrompt = `You are a changelog writer. You compare before/after screenshots of a website and list every visible change in bullet points. Be specific and concrete — mention exact elements, colors, text content, layout shifts. Format as markdown bullet points. Do NOT add commentary — just list the changes.`
+      // Read current file contents to describe what changed
+      const fileContents = changedFiles.map(f => {
+        const fp = path.join(dir, f.path)
+        try {
+          const content = readFileSync(fp, "utf-8")
+          // Truncate large files to keep prompt manageable
+          const truncated = content.length > 2000 ? content.slice(0, 2000) + "\n... (truncated)" : content
+          return `=== ${f.path} ===\n${truncated}`
+        } catch { return `=== ${f.path} === (file not readable)` }
+      }).join("\n\n")
 
-      const content = []
-      if (beforeScreenshot && afterScreenshot) {
-        content.push({
-          type: "image_url",
-          image_url: { url: `data:image/jpeg;base64,${beforeScreenshot}` },
-        })
-        content.push({
-          type: "image_url",
-          image_url: { url: `data:image/jpeg;base64,${afterScreenshot}` },
-        })
-        content.push({
-          type: "text",
-          text: `These are BEFORE and AFTER screenshots of round ${round} of a website build. Changed files: ${fileSummary}\n\nList every visible change as bullet points. Start each line with "• ". Be specific: mention exact elements, colors, text, layout shifts.`,
-        })
-      } else {
-        content.push({
-          type: "text",
-          text: `Round ${round} of a website build. Changed files: ${fileSummary}\n\nDescribe what likely changed based on the file names and context. Start each line with "• ". Be specific about what each file change implies visually.`,
-        })
-      }
+      const systemPrompt = `You are a changelog writer. You describe code changes in a website build. Read the code below and produce a concise, specific changelog. Format as markdown bullet points. Start each line with "• ". Be specific: mention exact elements, colors, text content, layout changes. Do NOT add commentary — just list the changes.`
 
-      const messages = [{ role: "user", content }]
+      const messages = [{
+        role: "user",
+        content: `Round ${round} — files changed: ${changedFiles.map(f => f.path).join(", ")}\n\nCurrent code:\n\n${fileContents}\n\nDescribe what changed in this round. Start each line with "• ". Be specific and concrete.`,
+      }]
 
       const result = await piAgentComplete(MODEL, messages, systemPrompt, [], "auto", projectId, "agent-changelog")
 
@@ -365,7 +356,7 @@ async function executeToolCall(tc, projectDir) {
   }
 }
 
-async function runAgent(skillName, buildId, prompt, projectDir) {
+async function runAgent(skillName, buildId, prompt, projectDir, images = []) {
   const skills = await getSkills()
   const skillBlock = getSkillPrompt(skills, skillName)
   const agentName = skills.find(s => s.name === skillName)?.description?.split("—")[0]?.trim() || skillName
@@ -390,7 +381,16 @@ ${skillBlock}
   const displayName = shortName.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
   emit(buildId, `agent:${skillName}:start`, { name: agentName, shortName: displayName })
 
-  let messages = [{ role: "user", content: prompt }]
+  // Build first message with optional images
+  const userContent = []
+  if (images.length > 0) {
+    for (const img of images) {
+      userContent.push({ type: "image_url", image_url: { url: `data:image/jpeg;base64,${img}` } })
+    }
+  }
+  userContent.push({ type: "text", text: prompt })
+
+  let messages = [{ role: "user", content: userContent }]
   let fullText = ""
   const agentStats = { wallMs: 0, ttftMs: null, inputTokens: 0, outputTokens: 0, toolCalls: 0, requestCount: 0, totalRequestTps: 0 }
   const agentStart = Date.now()
@@ -555,9 +555,8 @@ async function runBuild(prompt, projectId, dir) {
   agentStats["agent-coder"] = codeResult.stats
   console.log(`[Agent] Coder done`)
 
-  // Fire changelog immediately (detached) — screenshots best-effort
-  const afterShot = await captureScreenshot(projectId).catch(() => null)
-  launchChangelog(projectId, dir, 1, beforeScreenshot, afterShot, collectFiles(dir).map(f => f.path))
+  // Fire changelog (detached) — text-only with code changes
+  launchChangelog(projectId, dir, 1, collectFiles(dir).map(f => f.path))
 
   // ── EARLY PREVIEW ──
   const previewFiles = collectFiles(dir)
@@ -575,11 +574,16 @@ async function runBuild(prompt, projectId, dir) {
 
     const beforeFiles = getFileNames(dir)
 
+    // Capture screenshot for reviewers to see rendered site
+    const reviewerShot = await captureScreenshot(projectId).catch(() => null)
+    const reviewerImages = reviewerShot ? [reviewerShot] : []
+
     const loopReviews = await Promise.all(
       reviewRoles.map(role =>
         runAgent(role, projectId,
           `Read index.html, styles.css, script.js using read_file. Review for remaining issues. Update your review .md file using write_file. If all previous issues are fixed, write "ALL CLEAR - no issues remaining".`,
-          dir
+          dir,
+          reviewerImages
         ).then(r => { agentStats[role] = r.stats; return r })
       )
     )
@@ -608,9 +612,8 @@ async function runBuild(prompt, projectId, dir) {
     )
     agentStats["agent-coder"] = loopCode.stats
 
-    // Fire changelog for this iteration (detached) — screenshots best-effort
-    const loopAfterShot = await captureScreenshot(projectId).catch(() => null)
-    launchChangelog(projectId, dir, iteration + 1, loopBeforeScreenshot, loopAfterShot, collectFiles(dir).map(f => f.path))
+    // Fire changelog for this iteration (detached) — text-only
+    launchChangelog(projectId, dir, iteration + 1, collectFiles(dir).map(f => f.path))
 
     const afterFiles = getFileNames(dir)
     if (beforeFiles === afterFiles) {
@@ -645,10 +648,6 @@ async function runEdit(prompt, projectId, dir, selectedElement) {
   emit(projectId, "build:phase", { phase: "code", agents: ["agent-coder"] })
   console.log(`[Edit] Phase 1: Coder (targeted edit)`)
 
-  // Capture "before" screenshot for changelog
-  let beforeScreenshot = null
-  try { beforeScreenshot = await captureScreenshot(projectId) } catch {}
-
   const elementContext = selectedElement
     ? `Target element: <${selectedElement.tag}${selectedElement.id ? ` id="${selectedElement.id}"` : ""}${selectedElement.classes?.length ? ` class="${selectedElement.classes.join(" ")}"` : ""}>${selectedElement.text || ""}</${selectedElement.tag}>`
     : "No specific element targeted — apply edit to the most relevant part of the code."
@@ -660,9 +659,8 @@ async function runEdit(prompt, projectId, dir, selectedElement) {
   agentStats["agent-coder"] = codeResult.stats
   console.log(`[Edit] Coder done`)
 
-  // Fire changelog immediately (detached) — screenshots best-effort
-  const afterShot = await captureScreenshot(projectId).catch(() => null)
-  launchChangelog(projectId, dir, 1, beforeScreenshot, afterShot, collectFiles(dir).map(f => f.path))
+  // Fire changelog (detached) — text-only with code changes
+  launchChangelog(projectId, dir, 1, collectFiles(dir).map(f => f.path))
 
   // ── EARLY PREVIEW ──
   const previewFiles = collectFiles(dir)
@@ -676,12 +674,17 @@ async function runEdit(prompt, projectId, dir, selectedElement) {
   emit(projectId, "build:phase", { phase: "review", agents: ["agent-designer", "agent-security", "agent-debug", "agent-auditor"] })
   console.log(`[Edit] Phase 2: Review (background)`)
 
+  // Capture screenshot for reviewers to see rendered site
+  const reviewerShot = await captureScreenshot(projectId).catch(() => null)
+  const reviewerImages = reviewerShot ? [reviewerShot] : []
+
   const reviewRoles = ["agent-designer", "agent-security", "agent-debug", "agent-auditor"]
   await Promise.all(
     reviewRoles.map(role =>
       runAgent(role, projectId,
         `The user asked: "${prompt}"\n${selectedElement ? `Target element: <${selectedElement.tag}${selectedElement.id ? `#${selectedElement.id}` : ""}${selectedElement.classes?.length ? `.${selectedElement.classes.join(".")}` : ""}>\n` : ""}Read the current index.html, styles.css, script.js using read_file. Review whether the edit was applied correctly and the site still works. Write your findings to your review .md file using write_file. If everything looks correct and no issues, write "ALL CLEAR - no issues remaining".`,
-        dir
+        dir,
+        reviewerImages
       ).then(r => { agentStats[role] = r.stats; return r })
     )
   )
