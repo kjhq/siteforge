@@ -55,7 +55,7 @@ models.setProvider(createProvider({
 const MODEL = models.getModel("cerebras", "gemma-4-31b")
 
 // ⚡ TEST FLAG — set to false to re-enable all agents
-const SKIP_REVIEWERS = true
+const SKIP_REVIEWERS = false
 
 // ── Express Setup ────────────────────────────────────────────────
 const app = express()
