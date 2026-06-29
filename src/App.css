@@ -837,6 +837,9 @@ body {
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .file-tree-header {

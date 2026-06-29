@@ -687,15 +687,16 @@ async function runEdit(prompt, projectId, dir, selectedElement) {
   const reviewerImages = reviewerShot ? [reviewerShot] : []
 
   const reviewRoles = ["agent-design-planner", "agent-designer", "agent-security", "agent-debug", "agent-auditor"]
+  const userPrompt = prompt
   await Promise.all(
     reviewRoles.map(role => {
       const hasImage = (role === "agent-designer" || role === "agent-design-planner") && reviewerImages.length > 0
-      const elementContext = selectedElement
+      const reviewElementContext = selectedElement
         ? `Target element: <${selectedElement.tag}${selectedElement.id ? `#${selectedElement.id}` : ""}${selectedElement.classes?.length ? `.${selectedElement.classes.join(".")}` : ""}>`
         : ""
       const agentPrompt = (role === "agent-designer" || role === "agent-design-planner")
-        ? `The user asked: "${prompt}"\n${elementContext ? elementContext + "\n" : ""}A screenshot of the rendered site is attached. Study it carefully — look for visual problems: broken layout, overlapping elements, missing images, wrong colors, bad typography, poor spacing, responsiveness issues, anything that looks off.\n\nAlso read the code files using read_file — use list_dir first to discover all .html, .css, .js files in the project.\n\nWrite your review to your .md file using write_file. List every visual and code problem you find with severity (P0/P1/P2). If the site looks perfect, write "ALL CLEAR - no issues remaining".`
-        : `The user asked: "${prompt}"\n${elementContext ? elementContext + "\n" : ""}Use list_dir to discover all project files. Read all .html, .css, .js files using read_file. Review whether the edit was applied correctly and the site still works. Write your findings to your review .md file using write_file. If everything looks correct and no issues, write "ALL CLEAR - no issues remaining".`
+        ? `The user asked: "${userPrompt}"\n${reviewElementContext ? reviewElementContext + "\n" : ""}A screenshot of the rendered site is attached. Study it carefully — look for visual problems: broken layout, overlapping elements, missing images, wrong colors, bad typography, poor spacing, responsiveness issues, anything that looks off.\n\nAlso read the code files using read_file — use list_dir first to discover all .html, .css, .js files in the project.\n\nWrite your review to your .md file using write_file. List every visual and code problem you find with severity (P0/P1/P2). If the site looks perfect, write "ALL CLEAR - no issues remaining".`
+        : `The user asked: "${userPrompt}"\n${reviewElementContext ? reviewElementContext + "\n" : ""}Use list_dir to discover all project files. Read all .html, .css, .js files using read_file. Review whether the edit was applied correctly and the site still works. Write your findings to your review .md file using write_file. If everything looks correct and no issues, write "ALL CLEAR - no issues remaining".`
       return runAgent(role, projectId, agentPrompt, dir, hasImage ? reviewerImages : [])
         .then(r => { agentStats[role] = r.stats; return r })
     })
