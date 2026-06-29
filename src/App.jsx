@@ -1,30 +1,21 @@
 import { useState, useRef } from "react"
 import { CEREBRAS_API_KEY } from "./config"
-import VoiceInput from "./components/VoiceInput"
 import AgentPanel from "./components/AgentPanel"
 import CodePreview from "./components/CodePreview"
 import { runPipeline } from "./agents/orchestrator"
 import { Zap, Gauge, AlertTriangle, CheckCircle } from "lucide-react"
 
 export default function App() {
-  const [transcript, setTranscript] = useState("")
   const [pendingText, setPendingText] = useState("")
   const [agentStatuses, setAgentStatuses] = useState({})
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [gpuTime, setGpuTime] = useState(null)
+  const [selectedElement, setSelectedElement] = useState(null)
 
   const lastResultRef = useRef(null)
   const lastRequestRef = useRef("")
-
-  const handleTranscript = (text) => {
-    setTranscript(text)
-    setPendingText(text)
-    if (text.trim()) {
-      handleGenerate(text)
-    }
-  }
 
   const handleGenerate = async (text) => {
     if (!CEREBRAS_API_KEY) {
@@ -42,9 +33,10 @@ export default function App() {
 
     try {
       const startTime = performance.now()
-      const options = lastResultRef.current
-        ? { previousCode: lastResultRef.current.fullHtml, previousRequest: lastRequestRef.current }
-        : {}
+      const options = {
+        ...(lastResultRef.current ? { previousCode: lastResultRef.current.fullHtml, previousRequest: lastRequestRef.current } : {}),
+        ...(selectedElement ? { selectedElement } : {}),
+      }
       const res = await runPipeline(text, statusUpdater, options)
       const elapsed = ((performance.now() - startTime) / 1000).toFixed(2)
       res.timingValue = elapsed
@@ -60,40 +52,33 @@ export default function App() {
     setLoading(false)
   }
 
+  const handleElementSelect = (el) => {
+    setSelectedElement(el)
+  }
+
   return (
     <div className="app">
       <header className="app-header">
         <h1>
           <Zap className="logo-icon" /> VoCode
         </h1>
-        <p className="subtitle">Multi-Agent Voice-to-Website · Gemma 4 on Cerebras</p>
+        <p className="subtitle">Multi-Agent Website Builder · Gemma 4 on Cerebras</p>
       </header>
 
       <div className="main-layout">
         <div className="left-panel">
           <div className="input-section">
-            <VoiceInput onTranscript={handleTranscript} />
-
-            <div className="prompt-input">
-              <p className="prompt-label">Or type your request:</p>
-              <div className="input-row">
-                <input
-                  value={pendingText}
-                  onChange={(e) => setPendingText(e.target.value)}
-                  placeholder="e.g. Build a dark portfolio with projects section..."
-                  onKeyDown={(e) => e.key === "Enter" && handleGenerate(pendingText)}
-                />
-                <button className="generate-btn" onClick={() => handleGenerate(pendingText)} disabled={loading}>
-                  {loading ? "Building..." : "Build"}
-                </button>
-              </div>
+            <div className="input-row">
+              <input
+                value={pendingText}
+                onChange={(e) => setPendingText(e.target.value)}
+                placeholder="e.g. Build a dark portfolio with projects..."
+                onKeyDown={(e) => e.key === "Enter" && handleGenerate(pendingText)}
+              />
+              <button className="generate-btn" onClick={() => handleGenerate(pendingText)} disabled={loading}>
+                {loading ? "Building..." : "Build"}
+              </button>
             </div>
-
-            {transcript && (
-              <div className="transcript-box">
-                <strong>Building:</strong> "{transcript}"
-              </div>
-            )}
           </div>
 
           <AgentPanel agentStatuses={agentStatuses} timing={result?.timingValue} />
@@ -128,7 +113,11 @@ export default function App() {
         </div>
 
         <div className="right-panel">
-          <CodePreview code={result?.fullHtml} />
+          <CodePreview
+            code={result?.fullHtml}
+            onElementSelect={handleElementSelect}
+            selectedElement={selectedElement}
+          />
         </div>
       </div>
     </div>

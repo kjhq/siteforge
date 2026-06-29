@@ -62,31 +62,7 @@ body {
   height: 100%;
 }
 
-/* Voice Input */
-.voice-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 16px;
-  border: 2px dashed var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-  color: var(--text);
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.voice-btn:hover { border-color: var(--accent); background: var(--surface2); }
-.voice-btn.listening { border-color: #ef4444; background: #ef444411; }
-.icon { width: 20px; height: 20px; }
-.spin { animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.prompt-input { margin-top: 8px; }
-.prompt-label { color: var(--text2); font-size: 0.85rem; margin-bottom: 6px; }
+/* Input Section */
 .input-row { display: flex; gap: 8px; }
 .input-row input {
   flex: 1;
@@ -111,14 +87,41 @@ body {
 }
 .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.transcript-box {
-  padding: 10px 14px;
-  background: var(--surface);
-  border-radius: 8px;
-  border-left: 3px solid var(--accent);
-  font-size: 0.9rem;
+/* Element Bar — cursor targeting info */
+.element-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8rem;
   color: var(--text2);
 }
+.element-bar.selected { background: #6366f111; border-bottom-color: #6366f144; }
+.element-bar-icon { flex-shrink: 0; color: var(--accent); }
+.element-bar-tag { color: #22c55e; font-weight: 600; }
+.element-bar-id { color: #f59e0b; }
+.element-bar-classes { color: #ec4899; }
+.element-bar-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  margin-left: 4px;
+}
+.element-bar-status { font-size: 0.75rem; opacity: 0.7; }
+.element-bar-clear {
+  background: none;
+  border: none;
+  color: var(--text2);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+.element-bar-clear:hover { color: #ef4444; }
 
 /* Agent Panel */
 .agent-panel {

@@ -1,34 +1,44 @@
 import { CEREBRAS_API_KEY, CEREBRAS_API_URL, MODEL } from "../config"
 
 const SYSTEM_PROMPTS = {
-  architect: `You are a web architect. Given a user's request and any previous code, design or update the structure.
+  architect: `You are a web architect. Given a user's request and any previous code or selected element, design or update the structure.
 If previous code is provided, describe ONLY the changes needed — not the full architecture.
+If a selectedElement is provided, focus structural changes on that specific element.
 Output ONLY JSON: { "structure": "...", "components": [...], "layout": "...", "notes": "..." }`,
 
   developer: `You are a senior frontend developer. Given a user request, architecture plan, and any previous code, write or update complete HTML/CSS/JS.
 If previous code is provided, you are editing it — output the FULL updated file with your changes applied, never a diff or partial snippet.
+If a selectedElement is provided, modify ONLY that element and keep everything else unchanged.
 Output a SINGLE valid HTML file with inline CSS and JS. Use modern CSS (flexbox, grid, animations).
 Output ONLY JSON: { "html": "...", "css": "...", "js": "..." }`,
 
   reviewer: `You are a code reviewer. Review the generated (or updated) code for bugs, logic errors, accessibility issues.
 If previous code is provided, only review the changes — flag regressions from the old version.
+If a selectedElement is provided, verify the changes correctly targeted that element.
 Output ONLY JSON: { "critical": [...], "warnings": [...], "suggestions": [...], "approved": boolean }`,
 
   security: `You are a security auditor. Review code for XSS, injection, CSP issues, data exposure.
 If previous code is provided, check that the changes didn't introduce new vulnerabilities.
+If a selectedElement is provided, check that element specifically for security issues.
 Output ONLY JSON: { "vulnerabilities": [...], "risk_level": "low"|"medium"|"high", "passed": boolean }`,
 
   designer: `You are a UI/UX designer. Given the code and user request, suggest visual improvements.
 If previous code is provided, suggest visual improvements on top of what already exists.
+If a selectedElement is provided, focus design suggestions on that specific element.
 Output ONLY JSON: { "colors": {...}, "typography": "...", "improvements": [...], "meta_tags": "..." }`,
 }
 
 async function callAgent(agentId, userRequest, context = {}, retries = 1) {
+  const extras = []
+  if (context.previousCode) {
+    extras.push({ role: "system", content: "Previous code exists. You are editing it — output the FULL updated file, never a diff." })
+  }
+  if (context.selectedElement) {
+    extras.push({ role: "system", content: "A specific element is selected. Focus changes on that element. Its tag, id, classes, text, and computed styles are in selectedElement." })
+  }
   const messages = [
     { role: "system", content: SYSTEM_PROMPTS[agentId] },
-    ...(context.previousCode
-      ? [{ role: "system", content: "Previous code exists. You are editing it — output the FULL updated file, never a diff." }]
-      : []),
+    ...extras,
     { role: "user", content: JSON.stringify({ request: userRequest, ...context }) },
   ]
 
@@ -104,6 +114,7 @@ export async function runPipeline(userRequest, onAgentStatus, options = {}) {
   const startTime = performance.now()
   const context = {
     ...(options.previousCode ? { previousCode: options.previousCode, previousRequest: options.previousRequest } : {}),
+    ...(options.selectedElement ? { selectedElement: options.selectedElement } : {}),
   }
 
   onAgentStatus("architect", "working")
