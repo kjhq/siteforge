@@ -62,6 +62,7 @@ export default function MetricsPanel({ agentStats, liveTokens, liveTime, buildPh
     { name: "Auditor", label: "Auditor", emoji: "\u{1F4CB}", color: "#3b82f6" },
     { name: "Unifier", label: "Unifier", emoji: "\u{1F517}", color: "#06b6d4" },
     { name: "Coder", label: "Coder", emoji: "\u{1F4BB}", color: "#22c55e" },
+    { name: "Changelog", label: "Changelog", emoji: "\u{1F4DD}", color: "#f59e0b" },
   ]
 
   const cerebrasRatio = cerebrasTps > 0 ? Math.min(cerebrasTps / GPU_BASELINE_TPS, 1) : 0

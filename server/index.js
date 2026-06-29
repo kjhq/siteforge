@@ -189,6 +189,89 @@ const PI_TOOLS = [{
   parameters: Type.Object({}, { additionalProperties: false }),
 }]
 
+// ── Screenshot Capture ─────────────────────────────────────────
+let _puppeteerBrowser = null
+
+async function getBrowser() {
+  if (_puppeteerBrowser) return _puppeteerBrowser
+  const puppeteer = await import("puppeteer")
+  _puppeteerBrowser = await puppeteer.default.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  })
+  return _puppeteerBrowser
+}
+
+async function captureScreenshot(projectId) {
+  const browser = await getBrowser()
+  const page = await browser.newPage()
+  await page.setViewport({ width: 1280, height: 900 })
+  await page.goto(`http://localhost:${PORT}/preview/${projectId}`, { waitUntil: "networkidle2", timeout: 15000 })
+  await new Promise(r => setTimeout(r, 1500)) // Wait for animations/render
+  const screenshot = await page.screenshot({ type: "jpeg", quality: 70, fullPage: true })
+  await page.close()
+  return screenshot.toString("base64")
+}
+
+function launchChangelog(projectId, dir, round, beforeScreenshot, afterScreenshot, changedFiles) {
+  // Detached — fire and forget, doesn't block pipeline
+  getSkills().then(async skills => {
+    try {
+      const agentName = "changelog"
+      emit(projectId, "agent:agent-changelog:start", { name: "Changelog", shortName: "Changelog" })
+      const agentStart = Date.now()
+
+      const fileSummary = changedFiles.map(f => f.path).join(", ")
+      const systemPrompt = `You are a changelog writer. You compare before/after screenshots of a website and list every visible change in bullet points. Be specific and concrete — mention exact elements, colors, text content, layout shifts. Format as markdown bullet points. Do NOT add commentary — just list the changes.`
+
+      const messages = [{
+        role: "user",
+        content: [
+          {
+            type: "image_url",
+            image_url: {
+              url: `data:image/jpeg;base64,${beforeScreenshot}`,
+            },
+          },
+          {
+            type: "image_url",
+            image_url: {
+              url: `data:image/jpeg;base64,${afterScreenshot}`,
+            },
+          },
+          {
+            type: "text",
+            text: `These are BEFORE and AFTER screenshots of round ${round} of a website build. Changed files: ${fileSummary}\n\nList every visible change as bullet points. Start each line with "• ". Be specific: mention exact elements, colors, text, layout shifts.`,
+          },
+        ],
+      }]
+
+      const result = await piAgentComplete(MODEL, messages, systemPrompt, [], "auto", projectId, "agent-changelog")
+
+      const entries = (result.fullText || "").split("\n").filter(l => l.trim())
+      const wallMs = Date.now() - agentStart
+
+      emit(projectId, "agent:agent-changelog:end", { name: "Changelog", shortName: "Changelog" })
+      emit(projectId, "agent:agent-changelog:stats", {
+        shortName: "Changelog",
+        wallMs,
+        inputTokens: result.usage?.input || 0,
+        outputTokens: result.usage?.output || 0,
+        toolCalls: 0,
+        requestCount: 1,
+        totalRequestTps: result.wallMs > 0 && result.usage?.output ? (result.usage.output / result.wallMs) * 1000 : 0,
+      })
+      emit(projectId, "build:changelog", { round, entries })
+      console.log(`[Changelog] Round ${round}: ${entries.length} entries`)
+    } catch (err) {
+      console.error(`[Changelog] Error:`, err.message)
+      emit(projectId, "build:changelog", { round, entries: ["• (changelog generation failed)"] })
+    }
+  }).catch(err => {
+    console.error(`[Changelog] Skills load error:`, err.message)
+  })
+}
+
 // ── Agent Loop (pi-ai streaming + custom tool handling) ────────
 async function piAgentComplete(model, messages, systemPrompt, tools, toolChoice, buildId, skillName) {
   const wallStart = Date.now()
@@ -460,12 +543,23 @@ async function runBuild(prompt, projectId, dir) {
   emit(projectId, "build:phase", { phase: "code", agents: ["agent-coder"] })
   console.log(`[Build] Phase 3: Code`)
 
+  // Capture "before" screenshot for changelog
+  let beforeScreenshot = null
+  try { beforeScreenshot = await captureScreenshot(projectId) } catch {}
+
   const codeResult = await runAgent("agent-coder", projectId,
     `Read design-plan.md and unified-spec.md using read_file, then implement the website using write_file. Follow the design plan exactly — use the specified colors, fonts, layout, and signature element. Create separate files: index.html, styles.css, script.js. Each file must be COMPLETE and working. Use modern responsive design, semantic HTML, clean CSS, and proper JS. index.html must <link> to styles.css and <script src> to script.js.`,
     dir
   )
   agentStats["agent-coder"] = codeResult.stats
   console.log(`[Agent] Coder done`)
+
+  // Capture "after" screenshot and fire changelog (detached)
+  try {
+    const afterScreenshot = await captureScreenshot(projectId)
+    const changedFiles = collectFiles(dir).map(f => f.path)
+    launchChangelog(projectId, dir, 1, beforeScreenshot, afterScreenshot, changedFiles)
+  } catch (err) { console.error(`[Changelog] Screenshot error:`, err.message) }
 
   // ── EARLY PREVIEW ──
   const previewFiles = collectFiles(dir)
@@ -506,11 +600,22 @@ async function runBuild(prompt, projectId, dir) {
       break
     }
 
+    const loopBeforeScreenshot = beforeScreenshot
+    beforeScreenshot = null
+    try { beforeScreenshot = await captureScreenshot(projectId) } catch {}
+
     const loopCode = await runAgent("agent-coder", projectId,
       `Read unified-spec.md using read_file, then apply remaining fixes to the code files using write_file. Output COMPLETE updated files.`,
       dir
     )
     agentStats["agent-coder"] = loopCode.stats
+
+    // Fire changelog for this iteration (detached)
+    try {
+      const afterScreenshot = await captureScreenshot(projectId)
+      const changedFiles = collectFiles(dir).map(f => f.path)
+      launchChangelog(projectId, dir, iteration + 1, loopBeforeScreenshot, afterScreenshot, changedFiles)
+    } catch (err) { console.error(`[Changelog] Loop screenshot error:`, err.message) }
 
     const afterFiles = getFileNames(dir)
     if (beforeFiles === afterFiles) {
@@ -545,6 +650,10 @@ async function runEdit(prompt, projectId, dir, selectedElement) {
   emit(projectId, "build:phase", { phase: "code", agents: ["agent-coder"] })
   console.log(`[Edit] Phase 1: Coder (targeted edit)`)
 
+  // Capture "before" screenshot for changelog
+  let beforeScreenshot = null
+  try { beforeScreenshot = await captureScreenshot(projectId) } catch {}
+
   const elementContext = selectedElement
     ? `Target element: <${selectedElement.tag}${selectedElement.id ? ` id="${selectedElement.id}"` : ""}${selectedElement.classes?.length ? ` class="${selectedElement.classes.join(" ")}"` : ""}>${selectedElement.text || ""}</${selectedElement.tag}>`
     : "No specific element targeted — apply edit to the most relevant part of the code."
@@ -555,6 +664,13 @@ async function runEdit(prompt, projectId, dir, selectedElement) {
   )
   agentStats["agent-coder"] = codeResult.stats
   console.log(`[Edit] Coder done`)
+
+  // Capture "after" screenshot and fire changelog (detached)
+  try {
+    const afterScreenshot = await captureScreenshot(projectId)
+    const changedFiles = collectFiles(dir).map(f => f.path)
+    launchChangelog(projectId, dir, 1, beforeScreenshot, afterScreenshot, changedFiles)
+  } catch (err) { console.error(`[Changelog] Screenshot error:`, err.message) }
 
   // ── EARLY PREVIEW ──
   const previewFiles = collectFiles(dir)

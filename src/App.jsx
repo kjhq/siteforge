@@ -3,6 +3,7 @@ import AgentPanel from "./components/AgentPanel"
 import CodePreview from "./components/CodePreview"
 import MetricsPanel from "./components/MetricsPanel"
 import ProjectSelector from "./components/ProjectSelector"
+import ChangelogPanel from "./components/ChangelogPanel"
 import { AlertTriangle, MousePointer, Zap } from "lucide-react"
 
 function describeElement(el) {
@@ -26,6 +27,7 @@ export default function App() {
   const [agentStats, setAgentStats] = useState({})
   const [liveTime, setLiveTime] = useState(0)
   const [projects, setProjects] = useState([])
+  const [changelog, setChangelog] = useState([])
 
   const currentProjectRef = useRef(null)
   const abortRef = useRef(null)
@@ -45,6 +47,7 @@ export default function App() {
     setLiveTime(0)
     if (!currentProjectRef.current) setPreviewProjectId(null)
     setAgentStatuses({})
+    setChangelog([])
 
     if (timerRef.current) clearInterval(timerRef.current)
     timerRef.current = setInterval(() => setLiveTime(p => +(p + 0.1).toFixed(1)), 100)
@@ -128,6 +131,14 @@ export default function App() {
                 setPreviewVersion(v => v + 1)
               } else if (eventType === "build:converged") {
                 // Loop converged
+              } else if (eventType === "build:changelog") {
+                setChangelog(prev => {
+                  const existing = prev.find(r => r.round === data.round)
+                  if (existing) {
+                    return prev.map(r => r.round === data.round ? { ...r, entries: data.entries } : r)
+                  }
+                  return [...prev, { round: data.round, entries: data.entries }]
+                })
               } else if (eventType === "build:error") {
                 setError(data.error || "Build failed")
               } else if (eventType === "build:complete") {
@@ -300,6 +311,8 @@ export default function App() {
             selectedElement={selectedElement}
           />
         </div>
+
+        <ChangelogPanel changelog={changelog} loading={loading} />
       </div>
     </div>
   )

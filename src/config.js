@@ -10,4 +10,5 @@ export const AGENTS = [
   { id: "Auditor", label: "Code Auditor", color: "#3b82f6", emoji: "📋" },
   { id: "Unifier", label: "Spec Unifier", color: "#06b6d4", emoji: "🔗" },
   { id: "Coder", label: "Code Generator", color: "#22c55e", emoji: "💻" },
+  { id: "Changelog", label: "Changelog", color: "#f59e0b", emoji: "📝" },
 ]
