@@ -4,7 +4,7 @@ import CodePreview from "./components/CodePreview"
 import MetricsPanel from "./components/MetricsPanel"
 import ProjectSelector from "./components/ProjectSelector"
 import ChangelogPanel from "./components/ChangelogPanel"
-import { AlertTriangle, MousePointer, Zap } from "lucide-react"
+import { AlertTriangle } from "lucide-react"
 
 function describeElement(el) {
   if (!el) return "No element selected"
@@ -249,40 +249,29 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="app-header">
-        <h1>
-          <Zap className="logo-icon" /> VoCode
-        </h1>
-        <p className="subtitle">Multi-Agent Website Builder · Gemma 4 on Cerebras</p>
-      </header>
+      <div className="app-layout">
+        <div className="sidebar-left">
+          <ProjectSelector
+            projects={projects}
+            currentProjectId={currentProject?.id}
+            onSelect={handleProjectSelect}
+            onRename={handleRename}
+          />
 
-      <div className="main-layout">
-        <div className="left-panel">
-          <div className="input-section">
-            <div className="edit-context-card">
-              <ProjectSelector
-                projects={projects}
-                currentProjectId={currentProject?.id}
-                onSelect={handleProjectSelect}
-                onRename={handleRename}
-              />
-              <div className="edit-context-row">
-                <MousePointer size={15} />
-                <span>{selectedLabel}</span>
-              </div>
-            </div>
+          {selectedElement && (
+            <div className="element-label">{selectedLabel}</div>
+          )}
 
-            <div className="input-row">
-              <input
-                value={pendingText}
-                onChange={(e) => setPendingText(e.target.value)}
-                placeholder={placeholder}
-                onKeyDown={(e) => e.key === "Enter" && handleGenerate(pendingText)}
-              />
-              <button className="generate-btn" onClick={() => handleGenerate(pendingText)} disabled={loading}>
-                {loading ? "Working..." : modeLabel}
-              </button>
-            </div>
+          <div className="input-row">
+            <input
+              value={pendingText}
+              onChange={(e) => setPendingText(e.target.value)}
+              placeholder={placeholder}
+              onKeyDown={(e) => e.key === "Enter" && handleGenerate(pendingText)}
+            />
+            <button className="generate-btn" onClick={() => handleGenerate(pendingText)} disabled={loading}>
+              {loading ? "Working..." : modeLabel}
+            </button>
           </div>
 
           <AgentPanel agentStatuses={agentStatuses} timing={result?.stats?.wall_ms ? (result.stats.wall_ms / 1000).toFixed(1) : liveTime > 0 ? liveTime.toFixed(1) : null} />
@@ -292,7 +281,16 @@ export default function App() {
               <AlertTriangle size={16} /> {error}
             </div>
           )}
+        </div>
 
+        <CodePreview
+          projectId={previewProjectId}
+          previewVersion={previewVersion}
+          onElementSelect={handleElementSelect}
+          selectedElement={selectedElement}
+        />
+
+        <div className="sidebar-right">
           <MetricsPanel
             agentStats={agentStats}
             liveTokens={liveTokens}
@@ -301,18 +299,8 @@ export default function App() {
             loading={loading}
             finalStats={result?.stats}
           />
+          <ChangelogPanel changelog={changelog} />
         </div>
-
-        <div className="right-panel">
-          <CodePreview
-            projectId={previewProjectId}
-            previewVersion={previewVersion}
-            onElementSelect={handleElementSelect}
-            selectedElement={selectedElement}
-          />
-        </div>
-
-        <ChangelogPanel changelog={changelog} />
       </div>
     </div>
   )

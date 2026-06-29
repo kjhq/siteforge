@@ -392,7 +392,7 @@ ${skillBlock}
 
   let messages = [{ role: "user", content: userContent }]
   let fullText = ""
-  const agentStats = { wallMs: 0, ttftMs: null, inputTokens: 0, outputTokens: 0, toolCalls: 0, requestCount: 0, totalRequestTps: 0 }
+  const agentStats = { wallMs: 0, ttftMs: null, inputTokens: 0, outputTokens: 0, toolCalls: 0, requestCount: 0, totalRequestTps: 0, maxRequestTps: 0 }
   const agentStart = Date.now()
 
   while (true) {
@@ -412,7 +412,9 @@ ${skillBlock}
     }
     agentStats.requestCount++
     if (result.wallMs > 0 && result.usage?.output > 0) {
-      agentStats.totalRequestTps += (result.usage.output / result.wallMs) * 1000
+      const reqTps = (result.usage.output / result.wallMs) * 1000
+      agentStats.totalRequestTps += reqTps
+      agentStats.maxRequestTps = Math.max(agentStats.maxRequestTps, reqTps)
     }
     agentStats.wallMs = Date.now() - agentStart
 
@@ -477,8 +479,7 @@ function buildStats(projectId, files, agentStats, wallMs) {
   const totalInput = Object.values(agentStats).reduce((s, a) => s + (a.inputTokens || 0), 0)
   const totalOutput = Object.values(agentStats).reduce((s, a) => s + (a.outputTokens || 0), 0)
   const totalRequestCount = Object.values(agentStats).reduce((s, a) => s + (a.requestCount || 0), 0)
-  const totalRequestTps = Object.values(agentStats).reduce((s, a) => s + (a.totalRequestTps || 0), 0)
-  const cerebrasTps = totalRequestCount > 0 ? Math.round(totalRequestTps / totalRequestCount) : 0
+  const cerebrasTps = Math.round(Math.max(...Object.values(agentStats).map(a => a.maxRequestTps || 0), 0))
   const htmlFile = files.find(f => f.path.endsWith(".html"))
   return {
     gpu_baseline_tps: GPU_BASELINE.tps,

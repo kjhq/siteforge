@@ -18,71 +18,51 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
-.app { max-width: 1400px; margin: 0 auto; padding: 20px; }
-
-.app-header {
-  text-align: center;
-  margin-bottom: 24px;
+.app {
+  height: 100vh;
+  overflow: hidden;
 }
 
-.app-header h1 {
-  font-size: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.logo-icon { color: var(--accent); }
-
-.subtitle {
-  color: var(--text2);
-  font-size: 0.9rem;
-  margin-top: 4px;
-}
-
-.main-layout {
+.app-layout {
   display: grid;
-  grid-template-columns: 400px 1fr 240px;
-  gap: 20px;
-  height: calc(100vh - 120px);
+  grid-template-columns: 320px 1fr 300px;
+  height: 100vh;
+  gap: 0;
 }
 
-.left-panel {
+.sidebar-left {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  padding: 12px;
+  border-right: 1px solid var(--border);
   overflow-y: auto;
 }
 
-.right-panel {
-  height: 100%;
-}
-
-/* Input Section */
-.edit-context-card {
+.sidebar-right {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 12px;
   padding: 12px;
-  margin-bottom: 10px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
 }
 
-.edit-context-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* Element Label */
+.element-label {
+  font-size: 0.75rem;
   color: var(--text2);
-  font-size: 0.82rem;
+  padding: 6px 8px;
+  background: var(--surface);
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-
-.edit-context-row svg { color: var(--accent); }
 
 /* Project Selector */
 .project-selector {
@@ -685,11 +665,11 @@ body {
 /* Code Preview */
 .code-preview {
   background: var(--surface);
-  border-radius: 12px;
-  border: 1px solid var(--border);
+  border: none;
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .preview-header {
