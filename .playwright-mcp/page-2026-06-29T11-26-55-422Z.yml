@@ -1,0 +1,128 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "VoCode" [level=1] [ref=e5]:
+      - img [ref=e6]
+      - text: VoCode
+    - paragraph [ref=e8]: Multi-Agent Website Builder · Gemma 4 on Cerebras
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - generic [ref=e13]:
+            - img [ref=e14]
+            - generic [ref=e16]: project-1782732374062-1
+          - generic [ref=e17]:
+            - img [ref=e18]
+            - generic [ref=e21]: No element selected
+        - generic [ref=e22]:
+          - textbox "e.g. Make the selected text blue..." [ref=e78]: "A minimal landing page for a coffee shop called 'Bean & Brew'. Dark brown theme, light text, 3 sections: hero with headline, menu with 3 items, footer with address."
+          - button "Update" [ref=e79] [cursor=pointer]
+      - generic [ref=e25]:
+        - heading "Multi-Agent Pipeline" [level=3] [ref=e26]
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e30]: 🎨
+            - generic [ref=e31]:
+              - generic [ref=e32]: Design Reviewer
+              - generic [ref=e33]: Complete ✓
+          - generic [ref=e35]:
+            - generic [ref=e37]: 🔒
+            - generic [ref=e38]:
+              - generic [ref=e39]: Security Auditor
+              - generic [ref=e40]: Complete ✓
+          - generic [ref=e42]:
+            - generic [ref=e44]: 🐛
+            - generic [ref=e45]:
+              - generic [ref=e46]: Bug Finder
+              - generic [ref=e47]: Complete ✓
+          - generic [ref=e49]:
+            - generic [ref=e51]: 📋
+            - generic [ref=e52]:
+              - generic [ref=e53]: Code Auditor
+              - generic [ref=e54]: Complete ✓
+          - generic [ref=e56]:
+            - generic [ref=e58]: 🔗
+            - generic [ref=e59]:
+              - generic [ref=e60]: Spec Unifier
+              - generic [ref=e61]: Complete ✓
+          - generic [ref=e63]:
+            - generic [ref=e65]: 💻
+            - generic [ref=e66]:
+              - generic [ref=e67]: Code Generator
+              - generic [ref=e68]: Complete ✓
+        - generic [ref=e86]:
+          - generic [ref=e87]: "Total time:"
+          - generic [ref=e88]: 18.40s
+      - generic [ref=e89]:
+        - generic [ref=e91]: 1357 tok
+        - generic [ref=e93]: 126 tok/s · ModelRun
+      - generic [ref=e94]:
+        - generic [ref=e95]:
+          - img [ref=e96]
+          - generic [ref=e98]: 3 files
+        - generic [ref=e99]:
+          - img [ref=e100]
+          - generic [ref=e103]: "Target: whole project"
+        - generic [ref=e104]:
+          - img [ref=e105]
+          - generic [ref=e107]:
+            - text: "Cerebras: 18.40s"
+            - generic [ref=e108]: "vs ModelRun: ~10.77s"
+    - generic [ref=e71]:
+      - heading "Live Preview" [level=3] [ref=e73]
+      - iframe [ref=e109]:
+        - generic [active] [ref=f2e1]:
+          - banner [ref=f2e2]:
+            - navigation [ref=f2e3]:
+              - link "Bean & Brew" [ref=f2e5] [cursor=pointer]:
+                - /url: "#"
+              - generic "Toggle navigation" [ref=f2e6] [cursor=pointer]
+          - main [ref=f2e10]:
+            - generic [ref=f2e11]:
+              - generic [ref=f2e12]:
+                - heading "Wake Up to Perfection" [level=1] [ref=f2e13]
+                - paragraph [ref=f2e14]: Experience the rich, bold flavors of ethically sourced beans, roasted to perfection and brewed with passion.
+                - link "View Menu" [ref=f2e15] [cursor=pointer]:
+                  - /url: "#menu"
+              - img "Freshly brewed espresso with latte art" [ref=f2e17]
+            - generic [ref=f2e18]:
+              - generic [ref=f2e19]:
+                - heading "Our Signature Brews" [level=2] [ref=f2e20]
+                - paragraph [ref=f2e21]: Carefully curated selections for every coffee lover.
+              - generic [ref=f2e22]:
+                - article [ref=f2e23]:
+                  - img "Classic Espresso" [ref=f2e25]
+                  - generic [ref=f2e26]:
+                    - generic [ref=f2e27]:
+                      - heading "Classic Espresso" [level=3] [ref=f2e28]
+                      - generic [ref=f2e29]: $3.50
+                    - paragraph [ref=f2e30]: A concentrated shot of our house-blend dark roast, delivering a bold, intense flavor with a creamy crema.
+                - article [ref=f2e31]:
+                  - img "Velvet Latte" [ref=f2e33]
+                  - generic [ref=f2e34]:
+                    - generic [ref=f2e35]:
+                      - heading "Velvet Latte" [level=3] [ref=f2e36]
+                      - generic [ref=f2e37]: $4.75
+                    - paragraph [ref=f2e38]: Smooth, steamed milk poured over a duo of espresso shots, finished with a touch of sweetness.
+                - article [ref=f2e39]:
+                  - img "Cold Brew Reserve" [ref=f2e41]
+                  - generic [ref=f2e42]:
+                    - generic [ref=f2e43]:
+                      - heading "Cold Brew Reserve" [level=3] [ref=f2e44]
+                      - generic [ref=f2e45]: $5.25
+                    - paragraph [ref=f2e46]: Steeped for 24 hours for an ultra-smooth, low-acid profile with naturally chocolatey notes.
+          - contentinfo [ref=f2e47]:
+            - generic [ref=f2e48]:
+              - generic [ref=f2e49]:
+                - heading "Bean & Brew" [level=3] [ref=f2e50]
+                - paragraph [ref=f2e51]: Crafting moments of joy, one cup at a time.
+              - generic [ref=f2e52]:
+                - generic [ref=f2e53]:
+                  - strong [ref=f2e54]: "Visit Us:"
+                  - text: 123 Espresso Lane
+                  - text: Coffee District, CA 90210
+                - generic [ref=f2e55]:
+                  - strong [ref=f2e56]: "Hours:"
+                  - text: "Mon-Fri: 7am - 7pm"
+                  - text: "Sat-Sun: 8am - 8pm"
+            - paragraph [ref=f2e58]: © 2026 Bean & Brew Coffee Shop. All rights reserved.

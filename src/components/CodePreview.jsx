@@ -54,7 +54,7 @@ export default function CodePreview({ projectId, onElementSelect, selectedElemen
           <iframe
             ref={iframeRef}
             title="preview"
-            sandbox="allow-scripts"
+            sandbox="allow-scripts allow-same-origin"
             style={{ outline: el ? (hasSelection ? "3px solid #6366f1" : "2px solid #22c55e") : "none" }}
           />
         ) : (

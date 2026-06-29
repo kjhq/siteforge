@@ -1,0 +1,57 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "VoCode" [level=1] [ref=e5]:
+      - img [ref=e6]
+      - text: VoCode
+    - paragraph [ref=e8]: Multi-Agent Website Builder · Gemma 4 on Cerebras
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - generic [ref=e13]:
+            - img [ref=e14]
+            - generic [ref=e16]: No project yet
+          - generic [ref=e17]:
+            - img [ref=e18]
+            - generic [ref=e21]: No element selected
+        - generic [ref=e22]:
+          - textbox "e.g. Build a dark portfolio with projects..." [ref=e23]
+          - button "Build" [ref=e24] [cursor=pointer]
+      - generic [ref=e25]:
+        - heading "Multi-Agent Pipeline" [level=3] [ref=e26]
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e30]: 🎨
+            - generic [ref=e31]:
+              - generic [ref=e32]: Design Reviewer
+              - generic [ref=e33]: Standby
+          - generic [ref=e35]:
+            - generic [ref=e37]: 🔒
+            - generic [ref=e38]:
+              - generic [ref=e39]: Security Auditor
+              - generic [ref=e40]: Standby
+          - generic [ref=e42]:
+            - generic [ref=e44]: 🐛
+            - generic [ref=e45]:
+              - generic [ref=e46]: Bug Finder
+              - generic [ref=e47]: Standby
+          - generic [ref=e49]:
+            - generic [ref=e51]: 📋
+            - generic [ref=e52]:
+              - generic [ref=e53]: Code Auditor
+              - generic [ref=e54]: Standby
+          - generic [ref=e56]:
+            - generic [ref=e58]: 🔗
+            - generic [ref=e59]:
+              - generic [ref=e60]: Spec Unifier
+              - generic [ref=e61]: Standby
+          - generic [ref=e63]:
+            - generic [ref=e65]: 💻
+            - generic [ref=e66]:
+              - generic [ref=e67]: Code Generator
+              - generic [ref=e68]: Standby
+    - generic [ref=e71]:
+      - heading "Live Preview" [level=3] [ref=e73]
+      - generic [ref=e75]:
+        - generic [ref=e76]: ⌨️
+        - paragraph [ref=e77]: Describe a website to build...

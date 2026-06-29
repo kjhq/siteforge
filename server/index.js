@@ -499,6 +499,10 @@ app.get("/preview/:projectId", (req, res) => {
   if (!existsSync(indexPath)) return res.status(404).send("Not found")
 
   let html = readFileSync(indexPath, "utf-8")
+  // Inject <base> so relative URLs (styles.css, script.js) resolve to /preview/:id/
+  html = html.replace(/<head[^>]*>/i, (m) => `${m}\n<base href="/preview/${req.params.projectId}/">`)
+  // Strip CSP meta tag — blocks inline scripts and same-origin resources in sandboxed iframe
+  html = html.replace(/<meta[^>]*Content-Security-Policy[^>]*>/gi, "")
   html = html.replace("</body>", INJECTION_SCRIPT + "\n</body>")
   res.set("Content-Type", "text/html")
   res.send(html)
