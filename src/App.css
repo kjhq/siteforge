@@ -729,6 +729,14 @@ body {
   overflow: hidden;
 }
 
+.page-load-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  z-index: 10;
+  pointer-events: none;
+}
+
 .preview-frame.mobile {
   display: flex;
   align-items: flex-start;

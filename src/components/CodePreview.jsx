@@ -8,6 +8,7 @@ export default function CodePreview({ projectId, previewVersion, onElementSelect
   const [mobileView, setMobileView] = useState(false)
   const [inspectMode, setInspectMode] = useState(true)
   const [pageMenuOpen, setPageMenuOpen] = useState(false)
+  const [pageLoading, setPageLoading] = useState(false)
 
   const htmlPages = pages?.filter(p => p.path.endsWith(".html")) || []
   const hasMultiplePages = htmlPages.length > 1
@@ -15,6 +16,7 @@ export default function CodePreview({ projectId, previewVersion, onElementSelect
 
   useEffect(() => {
     if (!projectId || !iframeRef.current) return
+    setPageLoading(true)
     const pagePath = activePage === "index.html" ? "" : activePage
     iframeRef.current.src = `/preview/${projectId}/${pagePath}?v=${previewVersion}`
   }, [projectId, previewVersion, activePage])
@@ -41,6 +43,7 @@ export default function CodePreview({ projectId, previewVersion, onElementSelect
   }, [inspectMode])
 
   const handleIframeLoad = () => {
+    setPageLoading(false)
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage({ type: "setInspectMode", inspect: inspectMode }, "*")
     }
@@ -126,6 +129,7 @@ export default function CodePreview({ projectId, previewVersion, onElementSelect
       )}
 
       <div className={`preview-frame ${mobileView ? "mobile" : ""}`}>
+        {pageLoading && <div className="page-load-overlay" />}
         {projectId ? (
             <iframe
               ref={iframeRef}
