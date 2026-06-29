@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react"
 import AgentPanel from "./components/AgentPanel"
 import CodePreview from "./components/CodePreview"
+import MetricsPanel from "./components/MetricsPanel"
 import { AlertTriangle, Folder, MousePointer, Zap } from "lucide-react"
 
 function describeElement(el) {
@@ -15,14 +16,17 @@ export default function App() {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [gpuTime, setGpuTime] = useState(null)
   const [selectedElement, setSelectedElement] = useState(null)
   const [currentProject, setCurrentProject] = useState(null)
   const [previewProjectId, setPreviewProjectId] = useState(null)
-  const [liveStats, setLiveStats] = useState(null)
+  const [buildPhase, setBuildPhase] = useState(null)
+  const [liveTokens, setLiveTokens] = useState({ input: 0, output: 0 })
+  const [agentStats, setAgentStats] = useState({})
+  const [liveTime, setLiveTime] = useState(0)
 
   const currentProjectRef = useRef(null)
   const abortRef = useRef(null)
+  const timerRef = useRef(null)
 
   const updateStatus = (id, status) => {
     setAgentStatuses((prev) => ({ ...prev, [id]: status }))
@@ -32,29 +36,48 @@ export default function App() {
     if (!text.trim()) return
     setLoading(true)
     setError("")
-    setLiveStats(null)
+    setLiveTokens({ input: 0, output: 0 })
+    setAgentStats({})
+    setBuildPhase(null)
+    setLiveTime(0)
     setPreviewProjectId(null)
     setAgentStatuses({})
-    if (!currentProjectRef.current) setResult(null)
+
+    if (timerRef.current) clearInterval(timerRef.current)
+    timerRef.current = setInterval(() => setLiveTime(p => +(p + 0.1).toFixed(1)), 100)
 
     const abortCtrl = new AbortController()
     abortRef.current = abortCtrl
 
     try {
+      const body = { prompt: text }
+      if (currentProjectRef.current) {
+        body.existingProjectId = currentProjectRef.current.id
+      }
+      if (selectedElement) {
+        body.selectedElement = {
+          tag: selectedElement.tag,
+          id: selectedElement.id || null,
+          classes: selectedElement.classes || [],
+          text: selectedElement.text || "",
+        }
+      }
+
       const resp = await fetch("/api/build", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: text }),
+        body: JSON.stringify(body),
       })
       if (!resp.ok) throw new Error(`Server error ${resp.status}`)
       const { projectId } = await resp.json()
       if (!projectId) throw new Error("No project ID returned")
 
-      const project = { id: projectId, name: text.slice(0, 40), files: [] }
-      setCurrentProject(project)
-      currentProjectRef.current = project
+      if (!currentProjectRef.current) {
+        const project = { id: projectId, name: text.slice(0, 40), files: [] }
+        setCurrentProject(project)
+        currentProjectRef.current = project
+      }
 
-      // Connect to SSE
       const eventsUrl = `/api/build/${projectId}/events`
       const eventResp = await fetch(eventsUrl)
       if (!eventResp.ok) throw new Error("Failed to connect to event stream")
@@ -90,36 +113,35 @@ export default function App() {
               } else if (eventType.startsWith("agent:") && eventType.endsWith(":end")) {
                 const name = data.shortName || data.name || eventType.split(":")[1]
                 updateStatus(name, "done")
+              } else if (eventType.startsWith("agent:") && eventType.endsWith(":stats")) {
+                const name = data.shortName || eventType.split(":")[1]
+                setAgentStats(prev => ({ ...prev, [name]: data }))
+              } else if (eventType.startsWith("agent:") && eventType.endsWith(":delta")) {
+                setLiveTokens(prev => ({ ...prev, output: prev.output + 1 }))
               } else if (eventType === "build:phase") {
-                // Update phase info
+                setBuildPhase(data.phase)
+              } else if (eventType === "build:preview") {
+                setPreviewProjectId(projectId)
               } else if (eventType === "build:converged") {
                 // Loop converged
               } else if (eventType === "build:error") {
                 setError(data.error || "Build failed")
               } else if (eventType === "build:complete") {
-                // Fetch final result
+                if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
                 const resultResp = await fetch(`/api/build/${projectId}/result`)
                 if (resultResp.ok) {
                   const res = await resultResp.json()
                   if (res.ok) {
-                    project.files = res.files || []
-                    const htmlFile = res.files?.find(f => f.path.endsWith(".html"))
-                    const elapsed = ((performance.now() - startTime) / 1000).toFixed(2)
-
-                    setPreviewProjectId(project.id)
-                    const newResult = {
-                      fullHtml: res.fullHtml || htmlFile?.content || "",
-                      project,
+                    setResult({
+                      fullHtml: res.fullHtml || "",
+                      project: currentProjectRef.current,
                       files: res.files || [],
-                      timingValue: elapsed,
-                      timing: { total: elapsed },
                       stats: res.stats,
-                    }
-                    setResult(newResult)
-                    setLiveStats(res.stats)
-                    const tokens = res.stats?.completion_tokens || 0
-                    const gpuTps = res.stats?.gpu_baseline_tps || 100
-                    setGpuTime(tokens > 0 ? (tokens / gpuTps).toFixed(2) : null)
+                    })
+                    setLiveTokens({
+                      input: res.stats?.input_tokens || 0,
+                      output: res.stats?.completion_tokens || 0,
+                    })
                   }
                 }
               }
@@ -128,7 +150,6 @@ export default function App() {
         }
       }
 
-      const startTime = performance.now()
       readLoop().catch(() => {})
     } catch (e) {
       if (e.name !== "AbortError") setError(e.message || "Pipeline failed")
@@ -138,7 +159,10 @@ export default function App() {
   }
 
   useEffect(() => {
-    return () => abortRef.current?.abort()
+    return () => {
+      abortRef.current?.abort()
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
   }, [])
 
   const handleElementSelect = (el) => {
@@ -187,7 +211,7 @@ export default function App() {
             </div>
           </div>
 
-          <AgentPanel agentStatuses={agentStatuses} timing={result?.timingValue} />
+          <AgentPanel agentStatuses={agentStatuses} timing={result?.stats?.wall_ms ? (result.stats.wall_ms / 1000).toFixed(1) : liveTime > 0 ? liveTime.toFixed(1) : null} />
 
           {error && (
             <div className="error-banner">
@@ -195,40 +219,14 @@ export default function App() {
             </div>
           )}
 
-          {liveStats && result && (
-            <div className="stats-panel">
-              <div className="stat-hero">
-                <span className="stat-big">{liveStats.completion_tokens ? `${liveStats.completion_tokens} tok` : "?"}</span>
-              </div>
-              <div className="stat-line">
-                {liveStats.gpu_baseline_provider && liveStats.gpu_baseline_tps && (
-                  <span className="vs-text">{liveStats.gpu_baseline_tps} tok/s · {liveStats.gpu_baseline_provider}</span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {result && (
-            <div className="results-meta">
-              <div className="meta-card">
-                <Folder size={16} />
-                <span>{result.files?.length || 0} files</span>
-              </div>
-              <div className="meta-card">
-                <MousePointer size={16} />
-                <span>Target: {selectedElement ? selectedLabel : "whole project"}</span>
-              </div>
-              <div className="meta-card speed-card">
-                <Zap size={16} />
-                <span>
-                  Cerebras: {result.timingValue}s
-                  {gpuTime && result?.stats?.gpu_baseline_provider && (
-                    <span className="vs-text"> vs {result.stats.gpu_baseline_provider}: ~{gpuTime}s</span>
-                  )}
-                </span>
-              </div>
-            </div>
-          )}
+          <MetricsPanel
+            agentStats={agentStats}
+            liveTokens={liveTokens}
+            liveTime={liveTime}
+            buildPhase={buildPhase}
+            loading={loading}
+            finalStats={result?.stats}
+          />
         </div>
 
         <div className="right-panel">

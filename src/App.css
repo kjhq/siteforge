@@ -216,56 +216,196 @@ body {
 .timing-label { color: var(--text2); font-size: 0.85rem; }
 .timing-value { color: var(--accent); font-weight: 700; font-size: 1.1rem; }
 
-/* Speed Stats */
-.stats-panel {
-  background: var(--surface);
-  border-radius: 12px;
-  padding: 14px 16px;
-  border: 1px solid var(--border);
-}
-.stat-hero {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-.stat-big {
-  font-size: 2.2rem;
-  font-weight: 900;
-  color: #f59e0b;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-.stat-unit {
-  font-size: 0.85rem;
-  color: var(--text2);
-  font-weight: 600;
-}
-.stat-line {
-  font-size: 0.8rem;
-  color: var(--text2);
-  margin-top: 4px;
+/* ── Metrics Panel (terminal/hacker dashboard) ──────────────── */
+.metrics-panel {
+  background: #0a0e14;
+  border: 1px solid #1a2a1a;
+  border-radius: 10px;
+  padding: 14px;
+  font-family: "SF Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #4af626;
 }
 
-/* Results Meta */
-.results-meta {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.meta-card {
+.m-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
-  background: var(--surface);
-  border-radius: 8px;
-  border: 1px solid var(--border);
+  color: #4af626;
+  font-weight: 700;
   font-size: 0.8rem;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #1a2a1a;
 }
 
-.speed-card { border-color: var(--accent); }
-.vs-text { color: var(--text2); font-size: 0.75rem; }
+.m-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4af626;
+  animation: blink 1s step-end infinite;
+  margin-left: auto;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.m-section {
+  margin-bottom: 12px;
+}
+
+.m-section-title {
+  color: #6366f1;
+  font-size: 0.65rem;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.m-stat-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.m-stat-label {
+  color: #666;
+  flex-shrink: 0;
+}
+
+.m-stat-dots {
+  flex: 1;
+  border-bottom: 1px dotted #222;
+  margin: 0 4px;
+}
+
+.m-stat-value {
+  color: #4af626;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Speed comparison bars */
+.m-speed-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.m-speed-label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #888;
+  width: 70px;
+  flex-shrink: 0;
+  font-size: 0.65rem;
+}
+
+.m-speed-bar-wrap {
+  flex: 1;
+  height: 8px;
+  background: #111;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.m-speed-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.m-speed-bar.cerebras {
+  background: linear-gradient(90deg, #4af626, #22c55e);
+  box-shadow: 0 0 8px #4af62644;
+}
+
+.m-speed-bar.gpu {
+  background: #555;
+}
+
+.m-speed-val {
+  color: #4af626;
+  font-weight: 600;
+  width: 70px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.7rem;
+}
+
+.m-speedup {
+  text-align: center;
+  color: #f59e0b;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-top: 4px;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px #f59e0b44;
+}
+
+/* Agent timing bars */
+.m-agent-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.m-agent-bar.active .m-agent-bar-name {
+  color: #fff;
+}
+
+.m-agent-bar.active .m-agent-bar-time {
+  color: #4af626;
+}
+
+.m-agent-bar-name {
+  color: #666;
+  width: 65px;
+  flex-shrink: 0;
+  font-size: 0.7rem;
+}
+
+.m-agent-bar-ascii {
+  font-size: 0.7rem;
+  letter-spacing: 0;
+}
+
+.m-agent-bar-time {
+  color: #555;
+  width: 50px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.7rem;
+}
+
+/* Files */
+.m-files {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.m-file {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #888;
+}
+
+.m-file svg { color: #4af626; }
+
+.m-file-size {
+  margin-left: auto;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+}
 
 .error-banner {
   display: flex;

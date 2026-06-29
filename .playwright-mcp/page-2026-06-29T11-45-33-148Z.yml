@@ -1,0 +1,206 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "VoCode" [level=1] [ref=e5]:
+      - img [ref=e6]
+      - text: VoCode
+    - paragraph [ref=e8]: Multi-Agent Website Builder · Gemma 4 on Cerebras
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - generic [ref=e13]:
+            - img [ref=e14]
+            - generic [ref=e16]: project-1782733490071-1
+          - generic [ref=e17]:
+            - img [ref=e18]
+            - generic [ref=e21]: No element selected
+        - generic [ref=e22]:
+          - textbox "e.g. Make the selected text blue..." [ref=e78]: "A minimal landing page for a coffee shop called 'Bean & Brew'. Dark brown theme, light text, 3 sections: hero with headline, menu with 3 items, footer with address."
+          - button "Update" [ref=e79] [cursor=pointer]
+      - generic [ref=e25]:
+        - heading "Multi-Agent Pipeline" [level=3] [ref=e26]
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e30]: 🎨
+            - generic [ref=e31]:
+              - generic [ref=e32]: Design Reviewer
+              - generic [ref=e33]: Complete ✓
+          - generic [ref=e35]:
+            - generic [ref=e37]: 🔒
+            - generic [ref=e38]:
+              - generic [ref=e39]: Security Auditor
+              - generic [ref=e40]: Complete ✓
+          - generic [ref=e42]:
+            - generic [ref=e44]: 🐛
+            - generic [ref=e45]:
+              - generic [ref=e46]: Bug Finder
+              - generic [ref=e47]: Complete ✓
+          - generic [ref=e49]:
+            - generic [ref=e51]: 📋
+            - generic [ref=e52]:
+              - generic [ref=e53]: Code Auditor
+              - generic [ref=e54]: Complete ✓
+          - generic [ref=e56]:
+            - generic [ref=e58]: 🔗
+            - generic [ref=e59]:
+              - generic [ref=e60]: Spec Unifier
+              - generic [ref=e61]: Complete ✓
+          - generic [ref=e63]:
+            - generic [ref=e65]: 💻
+            - generic [ref=e66]:
+              - generic [ref=e67]: Code Generator
+              - generic [ref=e68]: Complete ✓
+        - generic [ref=e86]:
+          - generic [ref=e87]: "Total time:"
+          - generic [ref=e88]: 0.5s
+      - generic [ref=e89]:
+        - generic [ref=e90]:
+          - img [ref=e91]
+          - generic [ref=e93]: METRICS
+        - generic [ref=e94]:
+          - generic [ref=e95]:
+            - generic [ref=e96]:
+              - img [ref=e97]
+              - generic [ref=e99]: CEREBRAS
+            - generic [ref=e102]: 14558 tok/s
+          - generic [ref=e103]:
+            - generic [ref=e104]:
+              - img [ref=e105]
+              - generic [ref=e107]: GPU BASE
+            - generic [ref=e110]: 126 tok/s
+          - generic [ref=e111]: 115.5x FASTER
+        - generic [ref=e112]:
+          - generic [ref=e113]: TOKENS
+          - generic [ref=e114]:
+            - generic [ref=e115]: input
+            - generic [ref=e117]: 28.1k
+          - generic [ref=e118]:
+            - generic [ref=e119]: output
+            - generic [ref=e121]: 7.3k
+          - generic [ref=e122]:
+            - generic [ref=e123]: total
+            - generic [ref=e125]: 35.4k
+        - generic [ref=e126]:
+          - generic [ref=e127]: TIMING
+          - generic [ref=e128]:
+            - generic [ref=e129]: wall
+            - generic [ref=e131]: 0.5s
+          - generic [ref=e132]:
+            - generic [ref=e133]: ttft
+            - generic [ref=e135]: 432.59999999999997ms
+          - generic [ref=e136]:
+            - generic [ref=e137]: tool calls
+            - generic [ref=e139]: "31"
+          - generic [ref=e140]:
+            - generic [ref=e141]: phase
+            - generic [ref=e143]: review-loop
+        - generic [ref=e144]:
+          - generic [ref=e145]: AGENTS
+          - generic [ref=e146]:
+            - generic [ref=e147]: 🎨 Designer
+            - generic [ref=e148]: █░░░░░░░░░░░░░░░
+            - generic [ref=e149]: 2.26s
+          - generic [ref=e150]:
+            - generic [ref=e151]: 🔒 Security
+            - generic [ref=e152]: █░░░░░░░░░░░░░░░
+            - generic [ref=e153]: 2.25s
+          - generic [ref=e154]:
+            - generic [ref=e155]: 🐛 Debug
+            - generic [ref=e156]: █░░░░░░░░░░░░░░░
+            - generic [ref=e157]: 2.25s
+          - generic [ref=e158]:
+            - generic [ref=e159]: 📋 Auditor
+            - generic [ref=e160]: █░░░░░░░░░░░░░░░
+            - generic [ref=e161]: 2.24s
+          - generic [ref=e162]:
+            - generic [ref=e163]: 🔗 Unifier
+            - generic [ref=e164]: █░░░░░░░░░░░░░░░
+            - generic [ref=e165]: 1.70s
+          - generic [ref=e166]:
+            - generic [ref=e167]: 💻 Coder
+            - generic [ref=e168]: ███░░░░░░░░░░░░░
+            - generic [ref=e169]: 6.07s
+        - generic [ref=e170]:
+          - generic [ref=e171]: OUTPUT
+          - generic [ref=e172]:
+            - generic [ref=e173]:
+              - img [ref=e174]
+              - generic [ref=e177]: index.html
+              - generic [ref=e178]: 5.3kb
+            - generic [ref=e179]:
+              - img [ref=e180]
+              - generic [ref=e183]: script.js
+              - generic [ref=e184]: 2.5kb
+            - generic [ref=e185]:
+              - img [ref=e186]
+              - generic [ref=e189]: styles.css
+              - generic [ref=e190]: 6.1kb
+    - generic [ref=e71]:
+      - heading "Live Preview" [level=3] [ref=e73]
+      - iframe [ref=e191]:
+        - generic [active] [ref=f3e1]:
+          - banner [ref=f3e2]:
+            - navigation "Main Navigation" [ref=f3e3]:
+              - generic [ref=f3e5]: Bean & Brew
+              - button "Toggle Menu" [ref=f3e6] [cursor=pointer]
+          - main [ref=f3e8]:
+            - generic [ref=f3e11]:
+              - heading "Awaken Your Senses" [level=1] [ref=f3e12]
+              - paragraph [ref=f3e13]: Handcrafted coffee brewed with passion and the finest ethically sourced beans.
+              - link "Explore Menu" [ref=f3e14] [cursor=pointer]:
+                - /url: "#menu"
+            - generic [ref=f3e15]:
+              - generic [ref=f3e16]:
+                - heading "Our Signature Brews" [level=2] [ref=f3e17]
+                - paragraph [ref=f3e18]: Carefully curated selections for every palate
+              - generic [ref=f3e19]:
+                - article [ref=f3e20]:
+                  - img "Classic Cappuccino with latte art" [ref=f3e22]
+                  - generic [ref=f3e23]:
+                    - generic [ref=f3e24]:
+                      - heading "Classic Cappuccino" [level=3] [ref=f3e25]
+                      - generic [ref=f3e26]: $4.50
+                    - paragraph [ref=f3e27]: Equal parts espresso, steamed milk, and thick foam for a balanced, creamy finish.
+                - article [ref=f3e28]:
+                  - img "Rich Cold Brew coffee" [ref=f3e30]
+                  - generic [ref=f3e31]:
+                    - generic [ref=f3e32]:
+                      - heading "Midnight Cold Brew" [level=3] [ref=f3e33]
+                      - generic [ref=f3e34]: $5.25
+                    - paragraph [ref=f3e35]: Slow-steeped for 24 hours to deliver a bold, smooth flavor with low acidity.
+                - article [ref=f3e36]:
+                  - img "Honey Lavender Latte" [ref=f3e38]
+                  - generic [ref=f3e39]:
+                    - generic [ref=f3e40]:
+                      - heading "Honey Lavender Latte" [level=3] [ref=f3e41]
+                      - generic [ref=f3e42]: $5.75
+                    - paragraph [ref=f3e43]: A floral and sweet delight combining organic honey and dried lavender buds.
+          - contentinfo [ref=f3e44]:
+            - generic [ref=f3e45]:
+              - generic [ref=f3e46]:
+                - heading "Bean & Brew" [level=3] [ref=f3e47]
+                - paragraph [ref=f3e48]:
+                  - text: 123 Artisan Way
+                  - text: Coffee District, CA 90210
+              - generic [ref=f3e49]:
+                - heading "Hours of Operation" [level=3] [ref=f3e50]
+                - list [ref=f3e51]:
+                  - listitem [ref=f3e52]:
+                    - generic [ref=f3e53]: "Mon - Fri:"
+                    - generic [ref=f3e54]: 7:00 AM - 7:00 PM
+                  - listitem [ref=f3e55]:
+                    - generic [ref=f3e56]: "Sat:"
+                    - generic [ref=f3e57]: 8:00 AM - 8:00 PM
+                  - listitem [ref=f3e58]:
+                    - generic [ref=f3e59]: "Sun:"
+                    - generic [ref=f3e60]: 8:00 AM - 6:00 PM
+              - generic [ref=f3e61]:
+                - heading "Follow Us" [level=3] [ref=f3e62]
+                - generic [ref=f3e63]:
+                  - link "Instagram" [ref=f3e64] [cursor=pointer]:
+                    - /url: "#"
+                  - link "Facebook" [ref=f3e65] [cursor=pointer]:
+                    - /url: "#"
+                  - link "Twitter" [ref=f3e66] [cursor=pointer]:
+                    - /url: "#"
+            - paragraph [ref=f3e68]: © 2026 Bean & Brew Coffee Shop. All rights reserved.

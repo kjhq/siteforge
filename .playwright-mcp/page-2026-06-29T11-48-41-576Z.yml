@@ -1,0 +1,203 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "VoCode" [level=1] [ref=e5]:
+      - img [ref=e6]
+      - text: VoCode
+    - paragraph [ref=e8]: Multi-Agent Website Builder · Gemma 4 on Cerebras
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - generic [ref=e13]:
+            - img [ref=e14]
+            - generic [ref=e16]: project-1782733679196-2
+          - generic [ref=e17]:
+            - img [ref=e18]
+            - generic [ref=e21]: No element selected
+        - generic [ref=e22]:
+          - textbox "e.g. Make the selected text blue..." [ref=e78]: A dark portfolio landing page with 3 project cards, each with image, title, and description. Modern design with dark theme.
+          - button "Update" [ref=e79] [cursor=pointer]
+      - generic [ref=e25]:
+        - heading "Multi-Agent Pipeline" [level=3] [ref=e26]
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e30]: 🎨
+            - generic [ref=e31]:
+              - generic [ref=e32]: Design Reviewer
+              - generic [ref=e33]: Complete ✓
+          - generic [ref=e35]:
+            - generic [ref=e37]: 🔒
+            - generic [ref=e38]:
+              - generic [ref=e39]: Security Auditor
+              - generic [ref=e40]: Complete ✓
+          - generic [ref=e42]:
+            - generic [ref=e44]: 🐛
+            - generic [ref=e45]:
+              - generic [ref=e46]: Bug Finder
+              - generic [ref=e47]: Complete ✓
+          - generic [ref=e49]:
+            - generic [ref=e51]: 📋
+            - generic [ref=e52]:
+              - generic [ref=e53]: Code Auditor
+              - generic [ref=e54]: Complete ✓
+          - generic [ref=e56]:
+            - generic [ref=e58]: 🔗
+            - generic [ref=e59]:
+              - generic [ref=e60]: Spec Unifier
+              - generic [ref=e61]: Complete ✓
+          - generic [ref=e63]:
+            - generic [ref=e65]: 💻
+            - generic [ref=e66]:
+              - generic [ref=e67]: Code Generator
+              - generic [ref=e68]: Complete ✓
+        - generic [ref=e86]:
+          - generic [ref=e87]: "Total time:"
+          - generic [ref=e88]: 20.7s
+      - generic [ref=e89]:
+        - generic [ref=e90]:
+          - img [ref=e91]
+          - generic [ref=e93]: METRICS
+        - generic [ref=e94]:
+          - generic [ref=e95]:
+            - generic [ref=e96]:
+              - img [ref=e97]
+              - generic [ref=e99]: CEREBRAS
+            - generic [ref=e102]: 424 tok/s
+          - generic [ref=e103]:
+            - generic [ref=e104]:
+              - img [ref=e105]
+              - generic [ref=e107]: GPU BASE
+            - generic [ref=e110]: 126 tok/s
+          - generic [ref=e111]: 3.4x FASTER
+        - generic [ref=e112]:
+          - generic [ref=e113]: TOKENS
+          - generic [ref=e114]:
+            - generic [ref=e115]: input
+            - generic [ref=e117]: 37.2k
+          - generic [ref=e118]:
+            - generic [ref=e119]: output
+            - generic [ref=e121]: 8.8k
+          - generic [ref=e122]:
+            - generic [ref=e123]: total
+            - generic [ref=e125]: 46.0k
+        - generic [ref=e126]:
+          - generic [ref=e127]: TIMING
+          - generic [ref=e128]:
+            - generic [ref=e129]: wall
+            - generic [ref=e131]: 20.7s
+          - generic [ref=e132]:
+            - generic [ref=e133]: ttft
+            - generic [ref=e135]: 523.2ms
+          - generic [ref=e136]:
+            - generic [ref=e137]: tool calls
+            - generic [ref=e139]: "36"
+          - generic [ref=e140]:
+            - generic [ref=e141]: phase
+            - generic [ref=e143]: review-loop
+        - generic [ref=e144]:
+          - generic [ref=e145]: AGENTS
+          - generic [ref=e146]:
+            - generic [ref=e147]: 🎨 Designer
+            - generic [ref=e148]: █░░░░░░░░░░░░░░░
+            - generic [ref=e149]: 2.40s
+          - generic [ref=e150]:
+            - generic [ref=e151]: 🔒 Security
+            - generic [ref=e152]: █░░░░░░░░░░░░░░░
+            - generic [ref=e153]: 2.48s
+          - generic [ref=e154]:
+            - generic [ref=e155]: 🐛 Debug
+            - generic [ref=e156]: █░░░░░░░░░░░░░░░
+            - generic [ref=e157]: 2.45s
+          - generic [ref=e158]:
+            - generic [ref=e159]: 📋 Auditor
+            - generic [ref=e160]: █░░░░░░░░░░░░░░░
+            - generic [ref=e161]: 2.51s
+          - generic [ref=e162]:
+            - generic [ref=e163]: 🔗 Unifier
+            - generic [ref=e164]: █░░░░░░░░░░░░░░░
+            - generic [ref=e165]: 2.35s
+          - generic [ref=e166]:
+            - generic [ref=e167]: 💻 Coder
+            - generic [ref=e168]: ██░░░░░░░░░░░░░░
+            - generic [ref=e169]: 4.36s
+        - generic [ref=e170]:
+          - generic [ref=e171]: OUTPUT
+          - generic [ref=e172]:
+            - generic [ref=e173]:
+              - img [ref=e174]
+              - generic [ref=e177]: index.html
+              - generic [ref=e178]: 3.3kb
+            - generic [ref=e179]:
+              - img [ref=e180]
+              - generic [ref=e183]: script.js
+              - generic [ref=e184]: 4.7kb
+            - generic [ref=e185]:
+              - img [ref=e186]
+              - generic [ref=e189]: styles.css
+              - generic [ref=e190]: 7.1kb
+    - generic [ref=e71]:
+      - heading "Live Preview" [level=3] [ref=e73]
+      - iframe [ref=e191]:
+        - generic [active] [ref=f4e1]:
+          - banner [ref=f4e2]:
+            - navigation "Main Navigation" [ref=f4e3]:
+              - link "Home" [ref=f4e4] [cursor=pointer]:
+                - /url: "#"
+                - text: PORTFOLIO.
+              - button "Toggle Menu" [ref=f4e5] [cursor=pointer]
+          - main [ref=f4e7]:
+            - generic [ref=f4e9]:
+              - heading "Building Digital Experiences" [level=1] [ref=f4e10]
+              - paragraph [ref=f4e11]: A full-stack developer specializing in high-performance, accessible, and visually stunning web applications.
+              - generic [ref=f4e12]:
+                - link "View My Work" [ref=f4e13] [cursor=pointer]:
+                  - /url: "#projects"
+                - link "Get In Touch" [ref=f4e14] [cursor=pointer]:
+                  - /url: "#contact"
+            - generic [ref=f4e15]:
+              - generic [ref=f4e16]:
+                - heading "Featured Projects" [level=2] [ref=f4e17]
+                - paragraph [ref=f4e18]: A selection of my most recent and impactful work.
+              - generic [ref=f4e19]:
+                - article [ref=f4e20]:
+                  - img "Screenshot of AI Content Engine" [ref=f4e21]
+                  - generic [ref=f4e22]:
+                    - heading "AI Content Engine" [level=3] [ref=f4e23]
+                    - paragraph [ref=f4e24]: A high-performance SaaS platform utilizing OpenAI for automated content generation and SEO optimization.
+                    - link "View AI Content Engine project" [ref=f4e25] [cursor=pointer]:
+                      - /url: "#"
+                      - text: View Project →
+                - article [ref=f4e26]:
+                  - img "Screenshot of FinTech Dashboard" [ref=f4e27]
+                  - generic [ref=f4e28]:
+                    - heading "FinTech Dashboard" [level=3] [ref=f4e29]
+                    - paragraph [ref=f4e30]: Real-time financial tracking application with complex data visualization and secure transaction management.
+                    - link "View FinTech Dashboard project" [ref=f4e31] [cursor=pointer]:
+                      - /url: "#"
+                      - text: View Project →
+                - article [ref=f4e32]:
+                  - img "Screenshot of E-Commerce Ecosystem" [ref=f4e33]
+                  - generic [ref=f4e34]:
+                    - heading "E-Commerce Ecosystem" [level=3] [ref=f4e35]
+                    - paragraph [ref=f4e36]: Full-scale headless commerce solution featuring a custom storefront and comprehensive admin panel.
+                    - link "View E-Commerce Ecosystem project" [ref=f4e37] [cursor=pointer]:
+                      - /url: "#"
+                      - text: View Project →
+            - generic [ref=f4e39]:
+              - heading "Let's Work Together" [level=2] [ref=f4e40]
+              - paragraph [ref=f4e41]: Currently available for freelance projects and full-time opportunities.
+              - link "Email Me" [ref=f4e42] [cursor=pointer]:
+                - /url: mailto:hello@example.com
+          - contentinfo [ref=f4e43]:
+            - generic [ref=f4e44]:
+              - paragraph [ref=f4e45]: © 2026 Professional Portfolio. Built with precision and passion.
+              - generic [ref=f4e46]:
+                - link "GitHub" [ref=f4e47] [cursor=pointer]:
+                  - /url: "#"
+                  - text: GH
+                - link "LinkedIn" [ref=f4e48] [cursor=pointer]:
+                  - /url: "#"
+                  - text: LI
+                - link "Twitter" [ref=f4e49] [cursor=pointer]:
+                  - /url: "#"
+                  - text: TW

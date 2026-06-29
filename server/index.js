@@ -115,15 +115,14 @@ const PI_TOOLS = [{
 
 // ── Agent Loop (pi-ai streaming + custom tool handling) ────────
 async function piAgentComplete(model, messages, systemPrompt, tools, toolChoice, buildId, skillName) {
-  // Pass messages through unchanged if they're in pi-ai format
+  const wallStart = Date.now()
+  let ttftMs = null
+  let gotFirstDelta = false
+
   const convertedMessages = messages.map(m => {
-    // Already in pi-ai format (toolResult)
     if (m.role === "toolResult") return m
-    // Already in pi-ai format (assistant with content array)
     if (m.role === "assistant" && Array.isArray(m.content)) return m
-    // User message with string content
     if (m.role === "user") return { role: "user", content: m.content, timestamp: Date.now() }
-    // Fallback
     return { ...m, timestamp: Date.now() }
   })
 
@@ -137,16 +136,20 @@ async function piAgentComplete(model, messages, systemPrompt, tools, toolChoice,
     ...(toolChoice ? { toolChoice } : {}),
   }
 
-  // Stream for frontend feedback, but use complete() for actual result
   const stream = model ? models.stream(model, context, options) : null
   if (!stream) throw new Error("Model not found")
 
   let fullText = ""
   const toolCalls = []
+  let usage = null
 
   for await (const event of stream) {
     switch (event.type) {
       case "text_delta":
+        if (!gotFirstDelta) {
+          ttftMs = Date.now() - wallStart
+          gotFirstDelta = true
+        }
         fullText += event.delta
         if (buildId) emit(buildId, `agent:${skillName}:delta`, { text: event.delta })
         break
@@ -160,11 +163,19 @@ async function piAgentComplete(model, messages, systemPrompt, tools, toolChoice,
             })
           }
         }
+        if (event.message?.usage) {
+          usage = {
+            input: event.message.usage.input || 0,
+            output: event.message.usage.output || 0,
+            totalTokens: event.message.usage.totalTokens || 0,
+          }
+        }
         break
     }
   }
 
-  return { fullText, toolCalls }
+  const wallMs = Date.now() - wallStart
+  return { fullText, toolCalls, usage, wallMs, ttftMs }
 }
 
 async function executeToolCall(tc, projectDir) {
@@ -221,10 +232,10 @@ ${skillBlock}
 
   let messages = [{ role: "user", content: prompt }]
   let fullText = ""
-  let totalStats = { wall_ms: 0, ttft_ms: 0, completion_tokens: 0 }
+  const agentStats = { wallMs: 0, ttftMs: null, inputTokens: 0, outputTokens: 0, toolCalls: 0 }
+  const agentStart = Date.now()
 
   while (true) {
-    // First call forces tool use; subsequent calls let model decide
     const tc = messages.length === 1 ? "required" : "auto"
     console.log(`[Agent] ${skillName}: calling model (toolChoice=${tc}, messages=${messages.length})`)
     const result = await piAgentComplete(MODEL, messages, systemPrompt, PI_TOOLS, tc, buildId, skillName)
@@ -232,9 +243,19 @@ ${skillBlock}
     fullText = result.fullText
     console.log(`[Agent] ${skillName}: got ${result.toolCalls?.length || 0} tool calls, text=${(fullText||'').slice(0,50)}`)
 
+    if (result.ttftMs != null && (agentStats.ttftMs == null || result.ttftMs < agentStats.ttftMs)) {
+      agentStats.ttftMs = result.ttftMs
+    }
+    if (result.usage) {
+      agentStats.inputTokens += result.usage.input
+      agentStats.outputTokens += result.usage.output
+    }
+    agentStats.wallMs = Date.now() - agentStart
+
     if (!result.toolCalls || result.toolCalls.length === 0) break
 
-    // Execute tool calls
+    agentStats.toolCalls += result.toolCalls.length
+
     const toolResults = []
     for (const tc of result.toolCalls) {
       const argsStr = typeof tc.args === "object" ? JSON.stringify(tc.args) : String(tc.args || "")
@@ -262,7 +283,6 @@ ${skillBlock}
       })
     }
 
-    // Build assistant message with tool calls embedded in content array
     const contentBlocks = []
     if (fullText) contentBlocks.push({ type: "text", text: fullText })
     for (const tc of result.toolCalls) {
@@ -273,28 +293,60 @@ ${skillBlock}
     messages = [...messages, assistantMsg, ...toolResults]
   }
 
+  agentStats.wallMs = Date.now() - agentStart
   emit(buildId, `agent:${skillName}:end`, { name: agentName, shortName: displayName })
-  return { text: fullText }
+  emit(buildId, `agent:${skillName}:stats`, {
+    shortName: displayName,
+    wallMs: agentStats.wallMs,
+    ttftMs: agentStats.ttftMs,
+    inputTokens: agentStats.inputTokens,
+    outputTokens: agentStats.outputTokens,
+    toolCalls: agentStats.toolCalls,
+  })
+  return { text: fullText, stats: agentStats }
 }
 
 // ── Build Pipeline ────────────────────────────────────────────
+function buildStats(projectId, files, agentStats, wallMs) {
+  const totalInput = Object.values(agentStats).reduce((s, a) => s + (a.inputTokens || 0), 0)
+  const totalOutput = Object.values(agentStats).reduce((s, a) => s + (a.outputTokens || 0), 0)
+  const cerebrasTps = wallMs > 0 ? Math.round((totalOutput / wallMs) * 1000) : 0
+  const htmlFile = files.find(f => f.path.endsWith(".html"))
+  return {
+    gpu_baseline_tps: GPU_BASELINE.tps,
+    gpu_baseline_provider: GPU_BASELINE.provider,
+    completion_tokens: totalOutput,
+    input_tokens: totalInput,
+    total_tokens: totalInput + totalOutput,
+    cerebras_tps: cerebrasTps,
+    speedup: GPU_BASELINE.tps > 0 ? +(cerebrasTps / GPU_BASELINE.tps).toFixed(1) : 0,
+    wall_ms: wallMs,
+    agentStats,
+    fileCount: files.length,
+    files: files.map(f => ({ path: f.path, size: f.content.length })),
+  }
+}
+
 async function runBuild(prompt, projectId, dir) {
   const build = builds.get(projectId)
+  const buildStart = Date.now()
+  const agentStats = {}
   console.log(`[Build] Starting ${projectId}: "${prompt.slice(0, 50)}..."`)
 
   emit(projectId, "build:start", { projectId, prompt })
 
-  // Phase 1: Parallel Review
   const reviewRoles = ["agent-designer", "agent-security", "agent-debug", "agent-auditor"]
+
+  // Phase 1: Parallel Review
   emit(projectId, "build:phase", { phase: "review", agents: reviewRoles })
   console.log(`[Build] Phase 1: Review`)
 
-  await Promise.all(
+  const reviewResults = await Promise.all(
     reviewRoles.map(role =>
       runAgent(role, projectId,
         `Review this build prompt and write a detailed report as a .md file using write_file:\n\nBUILD PROMPT: ${prompt}\n\nInclude findings, severity (P0/P1/P2), and suggestions. If nothing to flag, write "ALL CLEAR - no issues".`,
         dir
-      ).then(r => console.log(`[Agent] ${role} done`))
+      ).then(r => { agentStats[role] = r.stats; console.log(`[Agent] ${role} done`); return r })
     )
   )
 
@@ -302,23 +354,33 @@ async function runBuild(prompt, projectId, dir) {
   emit(projectId, "build:phase", { phase: "unify", agents: ["agent-unifier"] })
   console.log(`[Build] Phase 2: Unify`)
 
-  await runAgent("agent-unifier", projectId,
+  const unifyResult = await runAgent("agent-unifier", projectId,
     `Read all review .md files using read_file, then write a unified-spec.md using write_file that synthesizes all findings into an ordered build plan. Include priority, file, description, and approach for each change.`,
     dir
   )
+  agentStats["agent-unifier"] = unifyResult.stats
   console.log(`[Agent] Unifier done`)
 
   // Phase 3: Code
   emit(projectId, "build:phase", { phase: "code", agents: ["agent-coder"] })
   console.log(`[Build] Phase 3: Code`)
 
-  await runAgent("agent-coder", projectId,
+  const codeResult = await runAgent("agent-coder", projectId,
     `Read unified-spec.md using read_file, then implement the website using write_file. Create separate files: index.html, styles.css, script.js. Each file must be COMPLETE and working. Use modern responsive design, semantic HTML, clean CSS, and proper JS. index.html must <link> to styles.css and <script src> to script.js.`,
     dir
   )
+  agentStats["agent-coder"] = codeResult.stats
   console.log(`[Agent] Coder done`)
 
-  // Phase 4: Review Loop
+  // ── EARLY PREVIEW ──
+  const previewFiles = collectFiles(dir)
+  const previewHtml = previewFiles.find(f => f.path.endsWith(".html"))
+  const previewInlined = inlineAssets(previewHtml?.content || "", previewFiles)
+  const previewStats = buildStats(projectId, previewFiles, agentStats, Date.now() - buildStart)
+  build.result = { files: previewFiles, fullHtml: previewInlined, stats: previewStats }
+  emit(projectId, "build:preview", { projectId, files: previewFiles, fullHtml: previewInlined, stats: previewStats })
+
+  // Phase 4: Review Loop (background)
   const MAX_ITERATIONS = 2
   for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     console.log(`[Build] Loop iteration ${iteration}`)
@@ -326,21 +388,21 @@ async function runBuild(prompt, projectId, dir) {
 
     const beforeFiles = getFileNames(dir)
 
-    await Promise.all(
+    const loopReviews = await Promise.all(
       reviewRoles.map(role =>
         runAgent(role, projectId,
           `Read index.html, styles.css, script.js using read_file. Review for remaining issues. Update your review .md file using write_file. If all previous issues are fixed, write "ALL CLEAR - no issues remaining".`,
           dir
-        )
+        ).then(r => { agentStats[role] = r.stats; return r })
       )
     )
 
-    await runAgent("agent-unifier", projectId,
+    const loopUnify = await runAgent("agent-unifier", projectId,
       `Read all updated review .md files using read_file. If all say "ALL CLEAR", write unified-spec.md with content "ALL CLEAR - NO CHANGES NEEDED". Otherwise write an updated spec with remaining fixes.`,
       dir
     )
+    agentStats["agent-unifier"] = loopUnify.stats
 
-    // Check for convergence
     const env = new NodeExecutionEnv({ cwd: dir })
     const spec = await env.readTextFile("unified-spec.md")
     if (spec.ok && spec.value.includes("NO CHANGES NEEDED")) {
@@ -349,10 +411,11 @@ async function runBuild(prompt, projectId, dir) {
       break
     }
 
-    await runAgent("agent-coder", projectId,
+    const loopCode = await runAgent("agent-coder", projectId,
       `Read unified-spec.md using read_file, then apply remaining fixes to the code files using write_file. Output COMPLETE updated files.`,
       dir
     )
+    agentStats["agent-coder"] = loopCode.stats
 
     const afterFiles = getFileNames(dir)
     if (beforeFiles === afterFiles) {
@@ -362,21 +425,100 @@ async function runBuild(prompt, projectId, dir) {
     }
   }
 
-  // Collect results
+  // Collect final results
   const files = collectFiles(dir)
   const htmlFile = files.find(f => f.path.endsWith(".html"))
   const inlinedHtml = inlineAssets(htmlFile?.content || "", files)
-  const stats = {
-    gpu_baseline_tps: GPU_BASELINE.tps,
-    gpu_baseline_provider: GPU_BASELINE.provider,
-    completion_tokens: htmlFile ? Math.ceil(htmlFile.content.length / 4) : 0,
-  }
+  const stats = buildStats(projectId, files, agentStats, Date.now() - buildStart)
 
   build.result = { files, fullHtml: inlinedHtml, stats }
   build.status = "complete"
 
   emit(projectId, "build:complete", { projectId, result: build.result })
-  console.log(`[VoCode] ${projectId}: ${files.length} files`)
+  console.log(`[VoCode] ${projectId}: ${files.length} files, ${stats.total_tokens} tokens, ${stats.cerebras_tps} tok/s`)
+}
+
+async function runEdit(prompt, projectId, dir, selectedElement) {
+  const build = builds.get(projectId)
+  const buildStart = Date.now()
+  const agentStats = {}
+  console.log(`[Edit] Starting ${projectId}: "${prompt.slice(0, 50)}..."`)
+
+  emit(projectId, "build:start", { projectId, prompt })
+
+  // Phase 1: Coder applies the targeted edit
+  emit(projectId, "build:phase", { phase: "code", agents: ["agent-coder"] })
+  console.log(`[Edit] Phase 1: Coder (targeted edit)`)
+
+  const elementContext = selectedElement
+    ? `Target element: <${selectedElement.tag}${selectedElement.id ? ` id="${selectedElement.id}"` : ""}${selectedElement.classes?.length ? ` class="${selectedElement.classes.join(" ")}"` : ""}>${selectedElement.text || ""}</${selectedElement.tag}>`
+    : "No specific element targeted — apply edit to the most relevant part of the code."
+
+  const codeResult = await runAgent("agent-coder", projectId,
+    `Edit the existing website. ${elementContext}\n\nInstruction: ${prompt}\n\nRead the existing files with read_file, understand the current code, then apply the edit. Write back COMPLETE updated files with write_file. Do NOT rewrite files from scratch — preserve everything that isn't being changed.`,
+    dir
+  )
+  agentStats["agent-coder"] = codeResult.stats
+  console.log(`[Edit] Coder done`)
+
+  // ── EARLY PREVIEW ──
+  const previewFiles = collectFiles(dir)
+  const previewHtml = previewFiles.find(f => f.path.endsWith(".html"))
+  const previewInlined = inlineAssets(previewHtml?.content || "", previewFiles)
+  const previewStats = buildStats(projectId, previewFiles, agentStats, Date.now() - buildStart)
+  build.result = { files: previewFiles, fullHtml: previewInlined, stats: previewStats }
+  emit(projectId, "build:preview", { projectId, files: previewFiles, fullHtml: previewInlined, stats: previewStats })
+
+  // Phase 2: Reviewers check if edit satisfies the ask
+  emit(projectId, "build:phase", { phase: "review", agents: ["agent-designer", "agent-security", "agent-debug", "agent-auditor"] })
+  console.log(`[Edit] Phase 2: Review (background)`)
+
+  const reviewRoles = ["agent-designer", "agent-security", "agent-debug", "agent-auditor"]
+  await Promise.all(
+    reviewRoles.map(role =>
+      runAgent(role, projectId,
+        `The user asked: "${prompt}"\n${selectedElement ? `Target element: <${selectedElement.tag}${selectedElement.id ? `#${selectedElement.id}` : ""}${selectedElement.classes?.length ? `.${selectedElement.classes.join(".")}` : ""}>\n` : ""}Read the current index.html, styles.css, script.js using read_file. Review whether the edit was applied correctly and the site still works. Write your findings to your review .md file using write_file. If everything looks correct and no issues, write "ALL CLEAR - no issues remaining".`,
+        dir
+      ).then(r => { agentStats[role] = r.stats; return r })
+    )
+  )
+
+  // Phase 3: Unifier convergence check
+  emit(projectId, "build:phase", { phase: "unify", agents: ["agent-unifier"] })
+  console.log(`[Edit] Phase 3: Unify`)
+
+  const unifyResult = await runAgent("agent-unifier", projectId,
+    `Read all updated review .md files using read_file. The user asked: "${prompt}". If all reviews say "ALL CLEAR", write unified-spec.md with content "ALL CLEAR - NO CHANGES NEEDED". Otherwise write an updated spec with remaining fixes needed to satisfy the user's request.`,
+    dir
+  )
+  agentStats["agent-unifier"] = unifyResult.stats
+
+  const env = new NodeExecutionEnv({ cwd: dir })
+  const spec = await env.readTextFile("unified-spec.md")
+  if (spec.ok && spec.value.includes("NO CHANGES NEEDED")) {
+    console.log(`[Edit] Converged — edit satisfied`)
+    emit(projectId, "build:converged", { iteration: 1 })
+  } else {
+    // Phase 4: Coder applies remaining fixes (1 iteration max)
+    console.log(`[Edit] Phase 4: Coder (fix remaining issues)`)
+    const fixResult = await runAgent("agent-coder", projectId,
+      `Read unified-spec.md using read_file. Apply the remaining fixes to the code files using write_file. Output COMPLETE updated files. Preserve everything that isn't being changed.`,
+      dir
+    )
+    agentStats["agent-coder"] = fixResult.stats
+  }
+
+  // Collect final results
+  const files = collectFiles(dir)
+  const htmlFile = files.find(f => f.path.endsWith(".html"))
+  const inlinedHtml = inlineAssets(htmlFile?.content || "", files)
+  const stats = buildStats(projectId, files, agentStats, Date.now() - buildStart)
+
+  build.result = { files, fullHtml: inlinedHtml, stats }
+  build.status = "complete"
+
+  emit(projectId, "build:complete", { projectId, result: build.result })
+  console.log(`[VoCode] ${projectId}: ${files.length} files, ${stats.total_tokens} tokens, ${stats.cerebras_tps} tok/s`)
 }
 
 function getFileNames(dir) {
@@ -431,15 +573,31 @@ function inlineAssets(html, files) {
 // ── API Endpoints ─────────────────────────────────────────────
 app.post("/api/build", async (req, res) => {
   try {
-    const { prompt } = req.body
+    const { prompt, existingProjectId, selectedElement } = req.body
     if (!prompt?.trim()) return res.json({ ok: false, error: "prompt required" })
 
-    const { projectId, dir } = createProjectDir()
+    let projectId, dir
+    if (existingProjectId) {
+      const existingBuild = builds.get(existingProjectId)
+      if (!existingBuild) return res.json({ ok: false, error: "project not found" })
+      projectId = existingProjectId
+      dir = existingBuild.dir
+      existingBuild.status = "running"
+      existingBuild.result = null
+    } else {
+      const created = createProjectDir()
+      projectId = created.projectId
+      dir = created.dir
+    }
+
     const emitter = new EventEmitter()
+    builds.set(projectId, { status: "running", emitter, dir, result: builds.get(projectId)?.result || null })
 
-    builds.set(projectId, { status: "running", emitter, dir, result: null })
+    const buildFn = existingProjectId
+      ? () => runEdit(prompt, projectId, dir, selectedElement)
+      : () => runBuild(prompt, projectId, dir)
 
-    runBuild(prompt, projectId, dir).catch(err => {
+    buildFn().catch(err => {
       console.error(`[VoCode] Build ${projectId} failed:`, err)
       console.error(err.stack)
       emit(projectId, "build:error", { error: err.message })
