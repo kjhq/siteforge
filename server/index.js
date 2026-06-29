@@ -222,20 +222,20 @@ function launchChangelog(projectId, dir, round, changedFiles) {
 
       // Read current file contents to describe what changed
       const fileContents = changedFiles.map(f => {
-        const fp = path.join(dir, f.path)
+        const fp = path.join(dir, f)
         try {
           const content = readFileSync(fp, "utf-8")
           // Truncate large files to keep prompt manageable
           const truncated = content.length > 2000 ? content.slice(0, 2000) + "\n... (truncated)" : content
-          return `=== ${f.path} ===\n${truncated}`
-        } catch { return `=== ${f.path} === (file not readable)` }
+          return `=== ${f} ===\n${truncated}`
+        } catch { return `=== ${f} === (file not readable)` }
       }).join("\n\n")
 
       const systemPrompt = `You are a changelog writer. You describe code changes in a website build. Read the code below and produce a concise, specific changelog. Format as markdown bullet points. Start each line with "• ". Be specific: mention exact elements, colors, text content, layout changes. Do NOT add commentary — just list the changes.`
 
       const messages = [{
         role: "user",
-        content: `Round ${round} — files changed: ${changedFiles.map(f => f.path).join(", ")}\n\nCurrent code:\n\n${fileContents}\n\nDescribe what changed in this round. Start each line with "• ". Be specific and concrete.`,
+        content: `Round ${round} — files changed: ${changedFiles.join(", ")}\n\nCurrent code:\n\n${fileContents}\n\nDescribe what changed in this round. Start each line with "• ". Be specific and concrete.`,
       }]
 
       const result = await piAgentComplete(MODEL, messages, systemPrompt, [], "auto", projectId, "agent-changelog")
