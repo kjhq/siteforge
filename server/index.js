@@ -227,7 +227,7 @@ ${skillBlock}
 - Each file must be complete and working independently`
 
   const shortName = skillName.replace("agent-", "")
-  const displayName = shortName.charAt(0).toUpperCase() + shortName.slice(1)
+  const displayName = shortName.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
   emit(buildId, `agent:${skillName}:start`, { name: agentName, shortName: displayName })
 
   let messages = [{ role: "user", content: prompt }]

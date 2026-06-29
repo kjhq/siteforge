@@ -29,12 +29,12 @@ function StatLine({ label, value, accent }) {
   )
 }
 
-function AgentTimingBar({ name, emoji, color, wallMs, active }) {
+function AgentTimingBar({ label, emoji, color, wallMs, active }) {
   const maxMs = 30000
   const ratio = wallMs ? Math.min(wallMs / maxMs, 1) : 0
   return (
     <div className={`m-agent-bar ${active ? "active" : ""}`}>
-      <span className="m-agent-bar-name">{emoji} {name}</span>
+      <span className="m-agent-bar-name">{emoji} {label}</span>
       <span className="m-agent-bar-ascii" style={{ color }}>{asciiBar(ratio, 16)}</span>
       <span className="m-agent-bar-time">{wallMs ? formatMs(wallMs) : active ? "_" : "---"}</span>
     </div>
@@ -55,13 +55,13 @@ export default function MetricsPanel({ agentStats, liveTokens, liveTime, buildPh
   const avgTtft = Object.values(agentStats).filter(a => a.ttftMs).reduce((s, a, _, arr) => s + a.ttftMs / arr.length, 0) || null
 
   const agentOrder = [
-    { name: "Design Planner", emoji: "\u270F\uFE0F", color: "#8b5cf6" },
-    { name: "Designer", emoji: "\u{1F3A8}", color: "#a855f7" },
-    { name: "Security", emoji: "\u{1F512}", color: "#ef4444" },
-    { name: "Debug", emoji: "\u{1F41B}", color: "#f59e0b" },
-    { name: "Auditor", emoji: "\u{1F4CB}", color: "#3b82f6" },
-    { name: "Unifier", emoji: "\u{1F517}", color: "#06b6d4" },
-    { name: "Coder", emoji: "\u{1F4BB}", color: "#22c55e" },
+    { name: "Design Planner", label: "Design Planner", emoji: "\u270F\uFE0F", color: "#8b5cf6" },
+    { name: "Designer", label: "Designer", emoji: "\u{1F3A8}", color: "#a855f7" },
+    { name: "Security", label: "Code Reviewer", emoji: "\u{1F512}", color: "#ef4444" },
+    { name: "Debug", label: "Bug Finder", emoji: "\u{1F41B}", color: "#f59e0b" },
+    { name: "Auditor", label: "Auditor", emoji: "\u{1F4CB}", color: "#3b82f6" },
+    { name: "Unifier", label: "Unifier", emoji: "\u{1F517}", color: "#06b6d4" },
+    { name: "Coder", label: "Coder", emoji: "\u{1F4BB}", color: "#22c55e" },
   ]
 
   const cerebrasRatio = cerebrasTps > 0 ? Math.min(cerebrasTps / GPU_BASELINE_TPS, 1) : 0
@@ -134,7 +134,7 @@ export default function MetricsPanel({ agentStats, liveTokens, liveTime, buildPh
           return (
             <AgentTimingBar
               key={a.name}
-              name={a.name}
+              label={a.label}
               emoji={a.emoji}
               color={a.color}
               wallMs={s?.wallMs}
