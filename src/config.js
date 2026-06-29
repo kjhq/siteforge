@@ -3,6 +3,7 @@ export const CEREBRAS_API_URL = "https://api.cerebras.ai/v1/chat/completions"
 export const MODEL = "gemma-4-31b"
 
 export const AGENTS = [
+  { id: "Design Planner", label: "Design Planner", color: "#8b5cf6", emoji: "✏️" },
   { id: "Designer", label: "Design Reviewer", color: "#a855f7", emoji: "🎨" },
   { id: "Security", label: "Security Auditor", color: "#ef4444", emoji: "🔒" },
   { id: "Debug", label: "Bug Finder", color: "#f59e0b", emoji: "🐛" },

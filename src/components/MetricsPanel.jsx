@@ -55,6 +55,7 @@ export default function MetricsPanel({ agentStats, liveTokens, liveTime, buildPh
   const avgTtft = Object.values(agentStats).filter(a => a.ttftMs).reduce((s, a, _, arr) => s + a.ttftMs / arr.length, 0) || null
 
   const agentOrder = [
+    { name: "Design Planner", emoji: "\u270F\uFE0F", color: "#8b5cf6" },
     { name: "Designer", emoji: "\u{1F3A8}", color: "#a855f7" },
     { name: "Security", emoji: "\u{1F512}", color: "#ef4444" },
     { name: "Debug", emoji: "\u{1F41B}", color: "#f59e0b" },

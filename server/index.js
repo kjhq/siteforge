@@ -343,6 +343,17 @@ async function runBuild(prompt, projectId, dir) {
 
   emit(projectId, "build:start", { projectId, prompt })
 
+  // Phase 0: Design Plan
+  emit(projectId, "build:phase", { phase: "design", agents: ["agent-design-planner"] })
+  console.log(`[Build] Phase 0: Design Plan`)
+
+  const designResult = await runAgent("agent-design-planner", projectId,
+    `Read the build prompt below and create a design plan. Brainstorm a unique visual direction: color palette (4-6 hex values), typography (display/body/utility faces), layout concept, and a signature element. Write your plan to design-plan.md using write_file. Be opinionated and specific — the Coder will follow this exactly.\n\nBUILD PROMPT: ${prompt}`,
+    dir
+  )
+  agentStats["agent-design-planner"] = designResult.stats
+  console.log(`[Agent] Design Planner done`)
+
   const reviewRoles = ["agent-designer", "agent-security", "agent-debug", "agent-auditor"]
 
   // Phase 1: Parallel Review
@@ -352,7 +363,7 @@ async function runBuild(prompt, projectId, dir) {
   const reviewResults = await Promise.all(
     reviewRoles.map(role =>
       runAgent(role, projectId,
-        `Review this build prompt and write a detailed report as a .md file using write_file:\n\nBUILD PROMPT: ${prompt}\n\nInclude findings, severity (P0/P1/P2), and suggestions. If nothing to flag, write "ALL CLEAR - no issues".`,
+        `Read design-plan.md and any existing files using read_file. Review this build prompt and write a detailed report as a .md file using write_file:\n\nBUILD PROMPT: ${prompt}\n\nConsider the design plan when reviewing. Include findings, severity (P0/P1/P2), and suggestions. If nothing to flag, write "ALL CLEAR - no issues".`,
         dir
       ).then(r => { agentStats[role] = r.stats; console.log(`[Agent] ${role} done`); return r })
     )
@@ -374,7 +385,7 @@ async function runBuild(prompt, projectId, dir) {
   console.log(`[Build] Phase 3: Code`)
 
   const codeResult = await runAgent("agent-coder", projectId,
-    `Read unified-spec.md using read_file, then implement the website using write_file. Create separate files: index.html, styles.css, script.js. Each file must be COMPLETE and working. Use modern responsive design, semantic HTML, clean CSS, and proper JS. index.html must <link> to styles.css and <script src> to script.js.`,
+    `Read design-plan.md and unified-spec.md using read_file, then implement the website using write_file. Follow the design plan exactly — use the specified colors, fonts, layout, and signature element. Create separate files: index.html, styles.css, script.js. Each file must be COMPLETE and working. Use modern responsive design, semantic HTML, clean CSS, and proper JS. index.html must <link> to styles.css and <script src> to script.js.`,
     dir
   )
   agentStats["agent-coder"] = codeResult.stats
