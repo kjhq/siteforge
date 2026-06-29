@@ -1,15 +1,15 @@
 import { useRef, useEffect, useState } from "react"
 import { MousePointer, X } from "lucide-react"
 
-export default function CodePreview({ projectId, onElementSelect, selectedElement }) {
+export default function CodePreview({ projectId, previewVersion, onElementSelect, selectedElement }) {
   const iframeRef = useRef(null)
   const [copied, setCopied] = useState(false)
   const [hovered, setHovered] = useState(null)
 
   useEffect(() => {
     if (!projectId || !iframeRef.current) return
-    iframeRef.current.src = `/preview/${projectId}`
-  }, [projectId])
+    iframeRef.current.src = `/preview/${projectId}?v=${previewVersion}`
+  }, [projectId, previewVersion])
 
   useEffect(() => {
     const handler = (e) => {

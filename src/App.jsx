@@ -19,6 +19,7 @@ export default function App() {
   const [selectedElement, setSelectedElement] = useState(null)
   const [currentProject, setCurrentProject] = useState(null)
   const [previewProjectId, setPreviewProjectId] = useState(null)
+  const [previewVersion, setPreviewVersion] = useState(0)
   const [buildPhase, setBuildPhase] = useState(null)
   const [liveTokens, setLiveTokens] = useState({ input: 0, output: 0 })
   const [agentStats, setAgentStats] = useState({})
@@ -40,7 +41,7 @@ export default function App() {
     setAgentStats({})
     setBuildPhase(null)
     setLiveTime(0)
-    setPreviewProjectId(null)
+    if (!currentProjectRef.current) setPreviewProjectId(null)
     setAgentStatuses({})
 
     if (timerRef.current) clearInterval(timerRef.current)
@@ -122,6 +123,7 @@ export default function App() {
                 setBuildPhase(data.phase)
               } else if (eventType === "build:preview") {
                 setPreviewProjectId(projectId)
+                setPreviewVersion(v => v + 1)
               } else if (eventType === "build:converged") {
                 // Loop converged
               } else if (eventType === "build:error") {
@@ -232,6 +234,7 @@ export default function App() {
         <div className="right-panel">
           <CodePreview
             projectId={previewProjectId}
+            previewVersion={previewVersion}
             onElementSelect={handleElementSelect}
             selectedElement={selectedElement}
           />
