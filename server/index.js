@@ -78,6 +78,66 @@ function emit(buildId, type, data) {
   if (b) b.emitter.emit("event", { type, data })
 }
 
+// ── Project Manifest ─────────────────────────────────────────────
+const MANIFEST_PATH = path.join(GENERATED_DIR, "manifest.json")
+
+function loadManifest() {
+  try {
+    if (existsSync(MANIFEST_PATH)) {
+      return JSON.parse(readFileSync(MANIFEST_PATH, "utf-8"))
+    }
+  } catch {}
+  return {}
+}
+
+function saveManifest(manifest) {
+  writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2))
+}
+
+function setProjectName(projectId, name) {
+  const manifest = loadManifest()
+  if (manifest[projectId]) {
+    manifest[projectId].name = name
+  } else {
+    manifest[projectId] = { name, created: Date.now() }
+  }
+  saveManifest(manifest)
+}
+
+function listProjects() {
+  const manifest = loadManifest()
+  const projects = []
+
+  // Scan generated/ for project dirs
+  try {
+    const dirs = readdirSync(GENERATED_DIR).filter(d => d.startsWith("project-"))
+    for (const dir of dirs) {
+      const id = dir
+      const dirPath = path.join(GENERATED_DIR, dir)
+      const st = statSync(dirPath)
+      if (!st.isDirectory()) continue
+
+      // Get name from manifest, or derive from first file
+      let name = manifest[id]?.name || null
+      if (!name) {
+        // Try to derive name from prompt in builds Map, or use dir name
+        const build = builds.get(id)
+        name = build?.prompt?.slice(0, 40) || id
+      }
+
+      projects.push({
+        id,
+        name,
+        created: manifest[id]?.created || st.mtimeMs,
+      })
+    }
+  } catch {}
+
+  // Sort by most recent first
+  projects.sort((a, b) => b.created - a.created)
+  return projects
+}
+
 // ── Skills Loader ──────────────────────────────────────────────
 let _skillsCache = null
 async function getSkills() {
@@ -607,10 +667,14 @@ app.post("/api/build", async (req, res) => {
       const created = createProjectDir()
       projectId = created.projectId
       dir = created.dir
+      // Save project name to manifest
+      const manifest = loadManifest()
+      manifest[projectId] = { name: prompt.slice(0, 40), created: Date.now() }
+      saveManifest(manifest)
     }
 
     const emitter = new EventEmitter()
-    builds.set(projectId, { status: "running", emitter, dir, result: builds.get(projectId)?.result || null })
+    builds.set(projectId, { status: "running", emitter, dir, result: builds.get(projectId)?.result || null, prompt })
 
     const buildFn = existingProjectId
       ? () => runEdit(prompt, projectId, dir, selectedElement)
@@ -664,6 +728,54 @@ app.get("/api/build/:projectId/result", (req, res) => {
     fullHtml: build.result.fullHtml,
     stats: build.result.stats,
   })
+})
+
+// ── Project Management ─────────────────────────────────────────
+app.get("/api/projects", (req, res) => {
+  const projects = listProjects()
+  res.json({ ok: true, projects })
+})
+
+app.get("/api/projects/:projectId", (req, res) => {
+  const { projectId } = req.params
+  const build = builds.get(projectId)
+  const manifest = loadManifest()
+
+  // Check if project dir exists
+  const dirPath = path.join(GENERATED_DIR, projectId)
+  if (!existsSync(dirPath)) {
+    return res.json({ ok: false, error: "project not found" })
+  }
+
+  const files = collectFiles(dirPath)
+  const name = manifest[projectId]?.name || projectId
+
+  res.json({
+    ok: true,
+    projectId,
+    name,
+    files: files.map(f => f.path),
+    hasBuild: !!build,
+    buildStatus: build?.status || null,
+    hasResult: !!build?.result,
+  })
+})
+
+app.patch("/api/projects/:projectId", (req, res) => {
+  const { projectId } = req.params
+  const { name } = req.body
+
+  if (!name?.trim()) {
+    return res.json({ ok: false, error: "name required" })
+  }
+
+  const dirPath = path.join(GENERATED_DIR, projectId)
+  if (!existsSync(dirPath)) {
+    return res.json({ ok: false, error: "project not found" })
+  }
+
+  setProjectName(projectId, name.trim())
+  res.json({ ok: true, projectId, name: name.trim() })
 })
 
 const INJECTION_SCRIPT = `<script>

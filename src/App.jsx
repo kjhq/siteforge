@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from "react"
 import AgentPanel from "./components/AgentPanel"
 import CodePreview from "./components/CodePreview"
 import MetricsPanel from "./components/MetricsPanel"
-import { AlertTriangle, Folder, MousePointer, Zap } from "lucide-react"
+import ProjectSelector from "./components/ProjectSelector"
+import { AlertTriangle, MousePointer, Zap } from "lucide-react"
 
 function describeElement(el) {
   if (!el) return "No element selected"
@@ -24,6 +25,7 @@ export default function App() {
   const [liveTokens, setLiveTokens] = useState({ input: 0, output: 0 })
   const [agentStats, setAgentStats] = useState({})
   const [liveTime, setLiveTime] = useState(0)
+  const [projects, setProjects] = useState([])
 
   const currentProjectRef = useRef(null)
   const abortRef = useRef(null)
@@ -144,6 +146,11 @@ export default function App() {
                       input: res.stats?.input_tokens || 0,
                       output: res.stats?.completion_tokens || 0,
                     })
+                    // Add new project to list if it's a new build
+                    if (!currentProjectRef.current || currentProjectRef.current.id !== projectId) {
+                      const newProject = { id: projectId, name: text.slice(0, 40), created: Date.now() }
+                      setProjects(prev => [newProject, ...prev])
+                    }
                   }
                 }
               }
@@ -161,11 +168,63 @@ export default function App() {
   }
 
   useEffect(() => {
+    fetchProjects()
     return () => {
       abortRef.current?.abort()
       if (timerRef.current) clearInterval(timerRef.current)
     }
   }, [])
+
+  const fetchProjects = async () => {
+    try {
+      const resp = await fetch("/api/projects")
+      if (resp.ok) {
+        const data = await resp.json()
+        if (data.ok) setProjects(data.projects)
+      }
+    } catch {}
+  }
+
+  const handleProjectSelect = async (projectId) => {
+    if (projectId === null) {
+      // New project
+      setCurrentProject(null)
+      currentProjectRef.current = null
+      setPreviewProjectId(null)
+      setSelectedElement(null)
+      setResult(null)
+      setPendingText("")
+      return
+    }
+
+    // Load existing project
+    try {
+      const resp = await fetch(`/api/projects/${projectId}`)
+      if (resp.ok) {
+        const data = await resp.json()
+        if (data.ok) {
+          const project = { id: data.projectId, name: data.name, files: data.files }
+          setCurrentProject(project)
+          currentProjectRef.current = project
+          setPreviewProjectId(projectId)
+          setPreviewVersion(v => v + 1)
+          setSelectedElement(null)
+          setResult(null)
+          setPendingText("")
+        }
+      }
+    } catch {}
+  }
+
+  const handleRename = (projectId, newName) => {
+    setProjects(prev => prev.map(p =>
+      p.id === projectId ? { ...p, name: newName } : p
+    ))
+    if (currentProject?.id === projectId) {
+      setCurrentProject(prev => ({ ...prev, name: newName }))
+      currentProjectRef.current = { ...currentProjectRef.current, name: newName }
+    }
+  }
 
   const handleElementSelect = (el) => {
     setSelectedElement(el)
@@ -190,10 +249,12 @@ export default function App() {
         <div className="left-panel">
           <div className="input-section">
             <div className="edit-context-card">
-              <div className="edit-context-row">
-                <Folder size={15} />
-                <span>{currentProject ? currentProject.id : "No project yet"}</span>
-              </div>
+              <ProjectSelector
+                projects={projects}
+                currentProjectId={currentProject?.id}
+                onSelect={handleProjectSelect}
+                onRename={handleRename}
+              />
               <div className="edit-context-row">
                 <MousePointer size={15} />
                 <span>{selectedLabel}</span>
