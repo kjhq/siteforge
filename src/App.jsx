@@ -18,6 +18,7 @@ export default function App() {
   const [gpuTime, setGpuTime] = useState(null)
   const [selectedElement, setSelectedElement] = useState(null)
   const [currentProject, setCurrentProject] = useState(null)
+  const [previewProjectId, setPreviewProjectId] = useState(null)
   const [liveStats, setLiveStats] = useState(null)
 
   const currentProjectRef = useRef(null)
@@ -32,6 +33,7 @@ export default function App() {
     setLoading(true)
     setError("")
     setLiveStats(null)
+    setPreviewProjectId(null)
     setAgentStatuses({})
     if (!currentProjectRef.current) setResult(null)
 
@@ -104,6 +106,7 @@ export default function App() {
                     const htmlFile = res.files?.find(f => f.path.endsWith(".html"))
                     const elapsed = ((performance.now() - startTime) / 1000).toFixed(2)
 
+                    setPreviewProjectId(project.id)
                     const newResult = {
                       fullHtml: res.fullHtml || htmlFile?.content || "",
                       project,
@@ -230,7 +233,7 @@ export default function App() {
 
         <div className="right-panel">
           <CodePreview
-            projectId={currentProject?.id}
+            projectId={previewProjectId}
             onElementSelect={handleElementSelect}
             selectedElement={selectedElement}
           />
