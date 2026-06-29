@@ -117,12 +117,28 @@ function listProjects() {
       const st = statSync(dirPath)
       if (!st.isDirectory()) continue
 
-      // Get name from manifest, or derive from first file
+      // Get name from manifest, or derive from files
       let name = manifest[id]?.name || null
       if (!name) {
-        // Try to derive name from prompt in builds Map, or use dir name
+        // Try to derive name from prompt in builds Map, or from HTML title
         const build = builds.get(id)
-        name = build?.prompt?.slice(0, 40) || id
+        if (build?.prompt) {
+          name = build.prompt.slice(0, 40)
+        } else {
+          // Try reading <title> from index.html
+          try {
+            const indexPath = path.join(dirPath, "index.html")
+            if (existsSync(indexPath)) {
+              const html = readFileSync(indexPath, "utf-8")
+              const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i)
+              if (titleMatch) {
+                name = titleMatch[1].trim().slice(0, 40)
+              }
+            }
+          } catch {}
+        }
+        // Fallback to formatted ID
+        if (!name) name = id.replace("project-", "").replace(/-\d+$/, "")
       }
 
       projects.push({

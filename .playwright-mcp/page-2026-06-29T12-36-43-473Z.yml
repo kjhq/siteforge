@@ -1,0 +1,182 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "VoCode" [level=1] [ref=e5]:
+      - img [ref=e6]
+      - text: VoCode
+    - paragraph [ref=e8]: Multi-Agent Website Builder · Gemma 4 on Cerebras
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - generic [ref=e13]:
+            - button "New Project" [active] [ref=e14] [cursor=pointer]:
+              - img [ref=e15]
+              - generic [ref=e17]: New Project
+              - img [ref=e18]
+            - generic [ref=e88]:
+              - button "New Project" [ref=e89] [cursor=pointer]:
+                - img [ref=e90]
+                - generic [ref=e91]: New Project
+              - generic [ref=e93] [cursor=pointer]:
+                - generic [ref=e94]:
+                  - generic [ref=e95]: project-1782736356005-11
+                  - generic [ref=e96]: 3m ago
+                - button "Rename" [ref=e97]:
+                  - img [ref=e98]
+              - generic [ref=e101] [cursor=pointer]:
+                - generic [ref=e102]:
+                  - generic [ref=e103]: project-1782735717137-10
+                  - generic [ref=e104]: 14m ago
+                - button "Rename" [ref=e105]:
+                  - img [ref=e106]
+              - generic [ref=e109] [cursor=pointer]:
+                - generic [ref=e110]:
+                  - generic [ref=e111]: project-1782735663141-9
+                  - generic [ref=e112]: 15m ago
+                - button "Rename" [ref=e113]:
+                  - img [ref=e114]
+              - generic [ref=e117] [cursor=pointer]:
+                - generic [ref=e118]:
+                  - generic [ref=e119]: project-1782735562981-8
+                  - generic [ref=e120]: 16m ago
+                - button "Rename" [ref=e121]:
+                  - img [ref=e122]
+              - generic [ref=e125] [cursor=pointer]:
+                - generic [ref=e126]:
+                  - generic [ref=e127]: project-1782735273694-7
+                  - generic [ref=e128]: 21m ago
+                - button "Rename" [ref=e129]:
+                  - img [ref=e130]
+              - generic [ref=e133] [cursor=pointer]:
+                - generic [ref=e134]:
+                  - generic [ref=e135]: project-1782734255693-6
+                  - generic [ref=e136]: 38m ago
+                - button "Rename" [ref=e137]:
+                  - img [ref=e138]
+              - generic [ref=e141] [cursor=pointer]:
+                - generic [ref=e142]:
+                  - generic [ref=e143]: project-1782733948814-5
+                  - generic [ref=e144]: 43m ago
+                - button "Rename" [ref=e145]:
+                  - img [ref=e146]
+              - generic [ref=e149] [cursor=pointer]:
+                - generic [ref=e150]:
+                  - generic [ref=e151]: project-1782733926118-4
+                  - generic [ref=e152]: 44m ago
+                - button "Rename" [ref=e153]:
+                  - img [ref=e154]
+              - generic [ref=e157] [cursor=pointer]:
+                - generic [ref=e158]:
+                  - generic [ref=e159]: project-1782733730187-3
+                  - generic [ref=e160]: 46m ago
+                - button "Rename" [ref=e161]:
+                  - img [ref=e162]
+              - generic [ref=e165] [cursor=pointer]:
+                - generic [ref=e166]:
+                  - generic [ref=e167]: project-1782733679196-2
+                  - generic [ref=e168]: 48m ago
+                - button "Rename" [ref=e169]:
+                  - img [ref=e170]
+              - generic [ref=e173] [cursor=pointer]:
+                - generic [ref=e174]:
+                  - generic [ref=e175]: project-1782733490071-1
+                  - generic [ref=e176]: 51m ago
+                - button "Rename" [ref=e177]:
+                  - img [ref=e178]
+              - generic [ref=e181] [cursor=pointer]:
+                - generic [ref=e182]:
+                  - generic [ref=e183]: project-1782732647821-5
+                  - generic [ref=e184]: 1h ago
+                - button "Rename" [ref=e185]:
+                  - img [ref=e186]
+              - generic [ref=e189] [cursor=pointer]:
+                - generic [ref=e190]:
+                  - generic [ref=e191]: project-1782732611599-4
+                  - generic [ref=e192]: 1h ago
+                - button "Rename" [ref=e193]:
+                  - img [ref=e194]
+              - generic [ref=e197] [cursor=pointer]:
+                - generic [ref=e198]:
+                  - generic [ref=e199]: project-1782732572676-3
+                  - generic [ref=e200]: 1h ago
+                - button "Rename" [ref=e201]:
+                  - img [ref=e202]
+              - generic [ref=e205] [cursor=pointer]:
+                - generic [ref=e206]:
+                  - generic [ref=e207]: project-1782732457952-2
+                  - generic [ref=e208]: 1h ago
+                - button "Rename" [ref=e209]:
+                  - img [ref=e210]
+              - generic [ref=e213] [cursor=pointer]:
+                - generic [ref=e214]:
+                  - generic [ref=e215]: project-1782732374062-1
+                  - generic [ref=e216]: 1h ago
+                - button "Rename" [ref=e217]:
+                  - img [ref=e218]
+              - generic [ref=e221] [cursor=pointer]:
+                - generic [ref=e222]:
+                  - generic [ref=e223]: project-1782732207254-3
+                  - generic [ref=e224]: 1h ago
+                - button "Rename" [ref=e225]:
+                  - img [ref=e226]
+              - generic [ref=e229] [cursor=pointer]:
+                - generic [ref=e230]:
+                  - generic [ref=e231]: project-1782731800300-2
+                  - generic [ref=e232]: 1h ago
+                - button "Rename" [ref=e233]:
+                  - img [ref=e234]
+              - generic [ref=e237] [cursor=pointer]:
+                - generic [ref=e238]:
+                  - generic [ref=e239]: project-1782731641121-1
+                  - generic [ref=e240]: 1h ago
+                - button "Rename" [ref=e241]:
+                  - img [ref=e242]
+          - generic [ref=e20]:
+            - img [ref=e21]
+            - generic [ref=e24]: No element selected
+        - generic [ref=e25]:
+          - textbox "e.g. Build a dark portfolio with projects..." [ref=e26]
+          - button "Build" [ref=e27] [cursor=pointer]
+      - generic [ref=e28]:
+        - heading "Multi-Agent Pipeline" [level=3] [ref=e29]
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - generic [ref=e33]: ✏️
+            - generic [ref=e34]:
+              - generic [ref=e35]: Design Planner
+              - generic [ref=e36]: Standby
+          - generic [ref=e38]:
+            - generic [ref=e40]: 🎨
+            - generic [ref=e41]:
+              - generic [ref=e42]: Design Reviewer
+              - generic [ref=e43]: Standby
+          - generic [ref=e45]:
+            - generic [ref=e47]: 🔒
+            - generic [ref=e48]:
+              - generic [ref=e49]: Code Reviewer
+              - generic [ref=e50]: Standby
+          - generic [ref=e52]:
+            - generic [ref=e54]: 🐛
+            - generic [ref=e55]:
+              - generic [ref=e56]: Bug Finder
+              - generic [ref=e57]: Standby
+          - generic [ref=e59]:
+            - generic [ref=e61]: 📋
+            - generic [ref=e62]:
+              - generic [ref=e63]: Code Auditor
+              - generic [ref=e64]: Standby
+          - generic [ref=e66]:
+            - generic [ref=e68]: 🔗
+            - generic [ref=e69]:
+              - generic [ref=e70]: Spec Unifier
+              - generic [ref=e71]: Standby
+          - generic [ref=e73]:
+            - generic [ref=e75]: 💻
+            - generic [ref=e76]:
+              - generic [ref=e77]: Code Generator
+              - generic [ref=e78]: Standby
+    - generic [ref=e81]:
+      - heading "Live Preview" [level=3] [ref=e83]
+      - generic [ref=e85]:
+        - generic [ref=e86]: ⌨️
+        - paragraph [ref=e87]: Describe a website to build...
