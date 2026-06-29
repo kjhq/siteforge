@@ -25,6 +25,8 @@ try {
 
 const CEREBRAS_API_KEY = process.env.VITE_CEREBRAS_API_KEY || ""
 const CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions"
+const GPU_BASELINE = { tps: 126, provider: "ModelRun" }
+console.log(`[Baseline] ${GPU_BASELINE.provider} at ${GPU_BASELINE.tps} tok/s (from OpenRouter stats)`)
 
 const app = express()
 app.use(cors())
@@ -47,7 +49,7 @@ function getProjectDir(projectId) {
   return fs.existsSync(dir) ? dir : null
 }
 
-async function* streamCerebras(messages, systemPrompt, apiKey) {
+async function* streamCerebras(messages, systemPrompt, apiKey, baseline) {
   const body = JSON.stringify({
     model: "gemma-4-31b",
     messages: [
@@ -121,6 +123,9 @@ async function* streamCerebras(messages, systemPrompt, apiKey) {
   const decodeTime = ttft ? elapsed - ttft : elapsed
   const perCallTps = totalTokens > 0 && decodeTime > 0 ? Math.round(totalTokens / (decodeTime / 1000)) : 0
 
+  const b = baseline || { tps: 100, provider: "GPU (estimated)" }
+  const speedupVsGpu = perCallTps > 0 ? (perCallTps / b.tps).toFixed(1) : 0
+
   yield {
     type: "done",
     fullText,
@@ -130,7 +135,9 @@ async function* streamCerebras(messages, systemPrompt, apiKey) {
       wall_ms: elapsed,
       completion_tokens: totalTokens,
       finish_reason: finishReason,
-      model_speedup: perCallTps > 0 ? (perCallTps / 100).toFixed(1) : 0,
+      model_speedup: speedupVsGpu,
+      gpu_baseline_tps: b.tps,
+      gpu_baseline_provider: b.provider,
     },
   }
 }
@@ -187,12 +194,12 @@ app.post("/api/build", async (req, res) => {
     const { projectId, dir } = createProjectDir()
 
     const messages = [{ role: "user", content: `Build a website for: ${prompt}` }]
-
+    const baseline = GPU_BASELINE
     let fullText = ""
     let stats = {}
 
     try {
-      for await (const event of streamCerebras(messages, SYSTEM_PROMPT, CEREBRAS_API_KEY)) {
+      for await (const event of streamCerebras(messages, SYSTEM_PROMPT, CEREBRAS_API_KEY, baseline)) {
         if (event.type === "delta") fullText = event.fullText
         if (event.type === "done") stats = event.stats
       }
@@ -252,12 +259,12 @@ app.post("/api/edit", async (req, res) => {
       role: "user",
       content: `Current HTML:\n${existingHtml}\n\n---\n${elementContext}Apply this change: ${instruction}\n\nOutput the COMPLETE updated HTML document with the change applied. Preserve everything not mentioned.`,
     }]
-
+    const baseline = GPU_BASELINE
     let fullText = ""
     let stats = {}
 
     try {
-      for await (const event of streamCerebras(messages, SYSTEM_PROMPT, CEREBRAS_API_KEY)) {
+      for await (const event of streamCerebras(messages, SYSTEM_PROMPT, CEREBRAS_API_KEY, baseline)) {
         if (event.type === "delta") fullText = event.fullText
         if (event.type === "done") stats = event.stats
       }

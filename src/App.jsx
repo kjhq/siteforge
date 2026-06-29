@@ -90,7 +90,10 @@ export default function App() {
       setResult(newResult)
       setCurrentProject(project)
       currentProjectRef.current = project
-      setGpuTime((parseFloat(elapsed) * 7.5).toFixed(2))
+      const tokens = res.stats?.completion_tokens || 0
+      const gpuTps = res.stats?.gpu_baseline_tps || 100
+      const gpuWall = tokens > 0 ? (tokens / gpuTps).toFixed(2) : (parseFloat(elapsed) * 15).toFixed(2)
+      setGpuTime(gpuWall)
       if (res.stats) setLiveStats(res.stats)
     } catch (e) {
       setError(e.message || "Pipeline failed")
@@ -162,7 +165,7 @@ export default function App() {
               <div className="stat-line">
                 {liveStats.completion_tokens} tokens · {liveStats.wall_ms}ms wall · TTFT {liveStats.ttft_ms}ms
                 {liveStats.model_speedup > 0 && (
-                  <span className="vs-text"> · {liveStats.model_speedup}x vs GPU baseline</span>
+                  <span className="vs-text"> · {liveStats.model_speedup}x vs {liveStats.gpu_baseline_provider || "GPU"}</span>
                 )}
               </div>
             </div>
@@ -182,8 +185,8 @@ export default function App() {
                 <Zap size={16} />
                 <span>
                   Cerebras: {result.timingValue}s
-                  {gpuTime && (
-                    <span className="vs-text"> vs GPU: ~{gpuTime}s ({((parseFloat(gpuTime) / parseFloat(result.timingValue))).toFixed(0)}x faster)</span>
+                  {gpuTime && result?.stats?.gpu_baseline_provider && (
+                    <span className="vs-text"> vs {result.stats.gpu_baseline_provider}: ~{gpuTime}s ({result.stats.model_speedup}x faster)</span>
                   )}
                 </span>
               </div>
