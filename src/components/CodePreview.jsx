@@ -1,11 +1,12 @@
 import { useRef, useEffect, useState } from "react"
-import { MousePointer, X, Smartphone, Monitor } from "lucide-react"
+import { MousePointer, X, Smartphone, Monitor, Eye, Pointer } from "lucide-react"
 
 export default function CodePreview({ projectId, previewVersion, onElementSelect, selectedElement }) {
   const iframeRef = useRef(null)
   const [copied, setCopied] = useState(false)
   const [hovered, setHovered] = useState(null)
   const [mobileView, setMobileView] = useState(false)
+  const [inspectMode, setInspectMode] = useState(true)
 
   useEffect(() => {
     if (!projectId || !iframeRef.current) return
@@ -14,33 +15,63 @@ export default function CodePreview({ projectId, previewVersion, onElementSelect
 
   useEffect(() => {
     const handler = (e) => {
-      if (e.data?.type === "hover") {
+      if (e.data?.type === "hover" && inspectMode) {
         setHovered(e.data)
-      } else if (e.data?.type === "select") {
+      } else if (e.data?.type === "select" && inspectMode) {
         setHovered(null)
         onElementSelect?.(e.data)
+      } else if (e.data?.type === "inspect-off") {
+        setHovered(null)
       }
     }
     window.addEventListener("message", handler)
     return () => window.removeEventListener("message", handler)
-  }, [onElementSelect])
+  }, [onElementSelect, inspectMode])
+
+  useEffect(() => {
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage({ type: "setInspectMode", inspect: inspectMode }, "*")
+    }
+  }, [inspectMode])
+
+  const handleIframeLoad = () => {
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage({ type: "setInspectMode", inspect: inspectMode }, "*")
+    }
+  }
 
   const el = selectedElement || hovered
   const hasSelection = !!selectedElement
+
+  const toggleInspect = () => {
+    setInspectMode(!inspectMode)
+    setHovered(null)
+  }
 
   return (
     <div className="code-preview">
       <div className="preview-header">
         <h3>Live Preview</h3>
-        {projectId && (
-          <button
-            className={`preview-toggle ${mobileView ? "active" : ""}`}
-            onClick={() => setMobileView(!mobileView)}
-            title={mobileView ? "Desktop view" : "Mobile view"}
-          >
-            {mobileView ? <Monitor size={14} /> : <Smartphone size={14} />}
-          </button>
-        )}
+        <div className="preview-controls">
+          {projectId && (
+            <>
+              <button
+                className={`preview-toggle ${inspectMode ? "active" : ""}`}
+                onClick={toggleInspect}
+                title={inspectMode ? "Interact with page" : "Inspect elements"}
+              >
+                {inspectMode ? <Pointer size={14} /> : <Eye size={14} />}
+              </button>
+              <button
+                className={`preview-toggle ${mobileView ? "active" : ""}`}
+                onClick={() => setMobileView(!mobileView)}
+                title={mobileView ? "Desktop view" : "Mobile view"}
+              >
+                {mobileView ? <Monitor size={14} /> : <Smartphone size={14} />}
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {el && (
@@ -61,13 +92,14 @@ export default function CodePreview({ projectId, previewVersion, onElementSelect
 
       <div className={`preview-frame ${mobileView ? "mobile" : ""}`}>
         {projectId ? (
-          <iframe
-            ref={iframeRef}
-            title="preview"
-            sandbox="allow-scripts allow-same-origin"
-            className={mobileView ? "iframe-mobile" : ""}
-            style={{ outline: el ? (hasSelection ? "3px solid #6366f1" : "2px solid #22c55e") : "none" }}
-          />
+            <iframe
+              ref={iframeRef}
+              title="preview"
+              sandbox="allow-scripts allow-same-origin"
+              className={mobileView ? "iframe-mobile" : ""}
+              onLoad={handleIframeLoad}
+              style={{ outline: el ? (hasSelection ? "3px solid #6366f1" : "2px solid #22c55e") : "none" }}
+            />
         ) : (
           <div className="empty-state">
             <span className="empty-icon">⌨️</span>

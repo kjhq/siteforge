@@ -907,7 +907,47 @@ app.patch("/api/projects/:projectId", (req, res) => {
 })
 
 const INJECTION_SCRIPT = `<script>
-(function(){var p=null;document.addEventListener('mouseover',function(e){var c=e.target;if(c===p)return;p=c;var r=c.getBoundingClientRect();parent.postMessage({type:'hover',tag:c.tagName.toLowerCase(),id:c.id||null,classes:Array.from(c.classList||[]),text:(c.textContent||'').trim().slice(0,80),rect:{top:r.top,left:r.left,width:r.width,height:r.height}},'*')},true);document.addEventListener('click',function(e){var el=e.target;var r=el.getBoundingClientRect();var cs={};try{var s=getComputedStyle(el);cs.color=s.color;cs.fontSize=s.fontSize}catch{}parent.postMessage({type:'select',tag:el.tagName.toLowerCase(),id:el.id||null,classes:Array.from(el.classList||[]),text:(el.textContent||'').trim().slice(0,80),rect:{top:r.top,left:r.left,width:r.width,height:r.height},styles:cs},'*');e.preventDefault();e.stopPropagation()},true)})()
+(function(){
+var inspectMode = true;
+var hoverTarget = null;
+
+function onHover(e) {
+  if (!inspectMode) return;
+  var c = e.target;
+  if (c === hoverTarget) return;
+  hoverTarget = c;
+  var r = c.getBoundingClientRect();
+  parent.postMessage({type:'hover',tag:c.tagName.toLowerCase(),id:c.id||null,classes:Array.from(c.classList||[]),text:(c.textContent||'').trim().slice(0,80),rect:{top:r.top,left:r.left,width:r.width,height:r.height}},'*');
+}
+
+function onSelect(e) {
+  if (!inspectMode) return;
+  var el = e.target;
+  var r = el.getBoundingClientRect();
+  var cs = {};
+  try {
+    var s = getComputedStyle(el);
+    cs.color = s.color;
+    cs.fontSize = s.fontSize;
+  } catch {}
+  parent.postMessage({type:'select',tag:el.tagName.toLowerCase(),id:el.id||null,classes:Array.from(el.classList||[]),text:(el.textContent||'').trim().slice(0,80),rect:{top:r.top,left:r.left,width:r.width,height:r.height},styles:cs},'*');
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+document.addEventListener('mouseover', onHover, true);
+document.addEventListener('click', onSelect, true);
+
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'setInspectMode') {
+    inspectMode = e.data.inspect;
+    hoverTarget = null;
+    if (!inspectMode) {
+      parent.postMessage({type:'inspect-off'}, '*');
+    }
+  }
+});
+})()
 </script>`
 
 app.get("/preview/:projectId", (req, res) => {
@@ -925,9 +965,21 @@ app.get("/preview/:projectId", (req, res) => {
   res.send(html)
 })
 
-app.get("/preview/:projectId/:file", (req, res) => {
-  const filePath = path.join(GENERATED_DIR, req.params.projectId, req.params.file)
+app.get("/preview/:projectId/{*page}", (req, res) => {
+  const pagePath = Array.isArray(req.params.page) ? req.params.page.join("/") : (req.params.page || "")
+  const filePath = path.join(GENERATED_DIR, req.params.projectId, pagePath)
   if (!existsSync(filePath)) return res.status(404).send("Not found")
+
+  // If it's an HTML file, inject script
+  if (filePath.endsWith(".html")) {
+    let html = readFileSync(filePath, "utf-8")
+    html = html.replace(/<head[^>]*>/i, (m) => `${m}\n<base href="/preview/${req.params.projectId}/">`)
+    html = html.replace(/<meta[^>]*Content-Security-Policy[^>]*>/gi, "")
+    html = html.replace("</body>", INJECTION_SCRIPT + "\n</body>")
+    res.set("Content-Type", "text/html")
+    return res.send(html)
+  }
+
   res.sendFile(filePath)
 })
 
