@@ -765,3 +765,151 @@ body {
 
 .empty-icon { font-size: 3rem; margin-bottom: 12px; }
 .empty-state p { font-size: 1rem; }
+
+/* Page Selector */
+.page-selector {
+  position: relative;
+}
+
+.page-selector-trigger {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.page-selector-trigger:hover {
+  background: var(--border);
+}
+
+.page-selector-trigger .open {
+  transform: rotate(180deg);
+}
+
+.page-selector-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 140px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.page-selector-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-size: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.page-selector-item:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.page-selector-item.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* File Tree */
+.file-tree {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.file-tree-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.file-tree-header:hover {
+  color: var(--text);
+}
+
+.file-tree-count {
+  margin-left: auto;
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+.file-tree-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 4px 6px;
+}
+
+.file-tree-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-size: 0.78rem;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.1s;
+}
+
+.file-tree-item:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.file-tree-item.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.file-icon.html { color: #f97316; }
+.file-icon.css { color: #3b82f6; }
+.file-icon.js { color: #eab308; }
+.file-icon.md { color: var(--text2); }
+
+.file-tree-item.active .file-icon { color: #fff; }
+
+.file-tree-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

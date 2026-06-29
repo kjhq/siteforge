@@ -373,9 +373,11 @@ ${skillBlock}
 ## Rules
 - Always output COMPLETE files — never partial content or diffs
 - Use write_file to create code files and report files
-- For code generation, create separate files: index.html, styles.css, script.js
+- For code generation, create all necessary HTML, CSS, and JS files
 - index.html must link to styles.css (<link>) and script.js (<script src>)
-- Each file must be complete and working independently`
+- Each file must be complete and working independently
+- For multi-page sites, create separate HTML files with navigation links between them
+- Use list_dir to discover existing files before creating new ones`
 
   const shortName = skillName.replace("agent-", "")
   const displayName = shortName.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
@@ -516,6 +518,7 @@ async function runBuild(prompt, projectId, dir) {
   console.log(`[Agent] Design Planner done`)
 
   const reviewRoles = ["agent-designer", "agent-security", "agent-debug", "agent-auditor"]
+  const loopReviewRoles = ["agent-design-planner", "agent-designer", "agent-security", "agent-debug", "agent-auditor"]
 
   // Phase 1: Parallel Review
   emit(projectId, "build:phase", { phase: "review", agents: reviewRoles })
@@ -524,7 +527,7 @@ async function runBuild(prompt, projectId, dir) {
   const reviewResults = await Promise.all(
     reviewRoles.map(role =>
       runAgent(role, projectId,
-        `Read design-plan.md and any existing files using read_file. Review this build prompt and write a detailed report as a .md file using write_file:\n\nBUILD PROMPT: ${prompt}\n\nConsider the design plan when reviewing. Include findings, severity (P0/P1/P2), and suggestions. If nothing to flag, write "ALL CLEAR - no issues".`,
+        `Use list_dir to discover existing files. Read design-plan.md and any other files using read_file. Review this build prompt and write a detailed report as a .md file using write_file:\n\nBUILD PROMPT: ${prompt}\n\nConsider the design plan when reviewing. Include findings, severity (P0/P1/P2), and suggestions. If nothing to flag, write "ALL CLEAR - no issues".`,
         dir
       ).then(r => { agentStats[role] = r.stats; console.log(`[Agent] ${role} done`); return r })
     )
@@ -550,7 +553,7 @@ async function runBuild(prompt, projectId, dir) {
   try { beforeScreenshot = await captureScreenshot(projectId) } catch {}
 
   const codeResult = await runAgent("agent-coder", projectId,
-    `Read design-plan.md and unified-spec.md using read_file, then implement the website using write_file. Follow the design plan exactly — use the specified colors, fonts, layout, and signature element. Create separate files: index.html, styles.css, script.js. Each file must be COMPLETE and working. Use modern responsive design, semantic HTML, clean CSS, and proper JS. index.html must <link> to styles.css and <script src> to script.js.`,
+    `Read design-plan.md and unified-spec.md using read_file, then implement the website using write_file. Follow the design plan exactly — use the specified colors, fonts, layout, and signature element. Create complete files: HTML, CSS, JS. For multi-page sites, create separate HTML files with navigation links between them. Each file must be COMPLETE and working. Use modern responsive design, semantic HTML, clean CSS, and proper JS. index.html must <link> to styles.css and <script src> to script.js. Use list_dir to check what files exist before creating new ones.`,
     dir
   )
   agentStats["agent-coder"] = codeResult.stats
@@ -561,11 +564,12 @@ async function runBuild(prompt, projectId, dir) {
 
   // ── EARLY PREVIEW ──
   const previewFiles = collectFiles(dir)
-  const previewHtml = previewFiles.find(f => f.path.endsWith(".html"))
-  const previewInlined = inlineAssets(previewHtml?.content || "", previewFiles)
+  const pages = inlineAllPages(previewFiles)
+  const previewHtml = pages.find(p => p.path === "index.html") || pages[0]
+  const previewInlined = previewHtml?.html || ""
   const previewStats = buildStats(projectId, previewFiles, agentStats, Date.now() - buildStart)
-  build.result = { files: previewFiles, fullHtml: previewInlined, stats: previewStats }
-  emit(projectId, "build:preview", { projectId, files: previewFiles, fullHtml: previewInlined, stats: previewStats })
+  build.result = { files: previewFiles, fullHtml: previewInlined, pages, stats: previewStats }
+  emit(projectId, "build:preview", { projectId, files: previewFiles, fullHtml: previewInlined, pages, stats: previewStats })
 
   // Phase 4: Review Loop (background)
   const MAX_ITERATIONS = 2
@@ -580,13 +584,14 @@ async function runBuild(prompt, projectId, dir) {
     const reviewerImages = reviewerShot ? [reviewerShot] : []
 
     const loopReviews = await Promise.all(
-      reviewRoles.map(role =>
-        runAgent(role, projectId,
-          `Read index.html, styles.css, script.js using read_file. Review for remaining issues. Update your review .md file using write_file. If all previous issues are fixed, write "ALL CLEAR - no issues remaining".`,
-          dir,
-          reviewerImages
-        ).then(r => { agentStats[role] = r.stats; return r })
-      )
+      loopReviewRoles.map(role => {
+        const hasImage = (role === "agent-designer" || role === "agent-design-planner") && reviewerImages.length > 0
+        const prompt = (role === "agent-designer" || role === "agent-design-planner")
+          ? `A screenshot of the rendered site is attached. Study it carefully — look for visual problems: broken layout, overlapping elements, missing images, wrong colors, bad typography, poor spacing, responsiveness issues, anything that looks off.\n\nAlso read the code files using read_file — use list_dir first to discover all .html, .css, .js files in the project.\n\nWrite your review to your .md file using write_file. List every visual and code problem you find with severity (P0/P1/P2). If the site looks perfect, write "ALL CLEAR - no issues remaining".`
+          : `Use list_dir to discover all project files. Read all .html, .css, .js files using read_file. Review for remaining issues. Update your review .md file using write_file. If all previous issues are fixed, write "ALL CLEAR - no issues remaining".`
+        return runAgent(role, projectId, prompt, dir, hasImage ? reviewerImages : [])
+          .then(r => { agentStats[role] = r.stats; return r })
+      })
     )
 
     const loopUnify = await runAgent("agent-unifier", projectId,
@@ -608,7 +613,7 @@ async function runBuild(prompt, projectId, dir) {
     beforeScreenshot = await captureScreenshot(projectId).catch(() => null)
 
     const loopCode = await runAgent("agent-coder", projectId,
-      `Read unified-spec.md using read_file, then apply remaining fixes to the code files using write_file. Output COMPLETE updated files.`,
+      `Read unified-spec.md using read_file, then apply remaining fixes to the code files using write_file. Output COMPLETE updated files. Use list_dir to see all existing files.`,
       dir
     )
     agentStats["agent-coder"] = loopCode.stats
@@ -626,11 +631,12 @@ async function runBuild(prompt, projectId, dir) {
 
   // Collect final results
   const files = collectFiles(dir)
-  const htmlFile = files.find(f => f.path.endsWith(".html"))
-  const inlinedHtml = inlineAssets(htmlFile?.content || "", files)
+  const finalPages = inlineAllPages(files)
+  const indexPage = finalPages.find(p => p.path === "index.html") || finalPages[0]
+  const inlinedHtml = indexPage?.html || ""
   const stats = buildStats(projectId, files, agentStats, Date.now() - buildStart)
 
-  build.result = { files, fullHtml: inlinedHtml, stats }
+  build.result = { files, fullHtml: inlinedHtml, pages: finalPages, stats }
   build.status = "complete"
 
   emit(projectId, "build:complete", { projectId, result: build.result })
@@ -654,7 +660,7 @@ async function runEdit(prompt, projectId, dir, selectedElement) {
     : "No specific element targeted — apply edit to the most relevant part of the code."
 
   const codeResult = await runAgent("agent-coder", projectId,
-    `Edit the existing website. ${elementContext}\n\nInstruction: ${prompt}\n\nRead the existing files with read_file, understand the current code, then apply the edit. Write back COMPLETE updated files with write_file. Do NOT rewrite files from scratch — preserve everything that isn't being changed.`,
+    `Edit the existing website. ${elementContext}\n\nInstruction: ${prompt}\n\nUse list_dir to see all existing files. Read the relevant files with read_file, understand the current code, then apply the edit. Write back COMPLETE updated files with write_file. Do NOT rewrite files from scratch — preserve everything that isn't being changed. Maintain navigation links between pages if the site is multi-page.`,
     dir
   )
   agentStats["agent-coder"] = codeResult.stats
@@ -665,29 +671,34 @@ async function runEdit(prompt, projectId, dir, selectedElement) {
 
   // ── EARLY PREVIEW ──
   const previewFiles = collectFiles(dir)
-  const previewHtml = previewFiles.find(f => f.path.endsWith(".html"))
-  const previewInlined = inlineAssets(previewHtml?.content || "", previewFiles)
+  const editPages = inlineAllPages(previewFiles)
+  const editIndexPage = editPages.find(p => p.path === "index.html") || editPages[0]
+  const previewInlined = editIndexPage?.html || ""
   const previewStats = buildStats(projectId, previewFiles, agentStats, Date.now() - buildStart)
-  build.result = { files: previewFiles, fullHtml: previewInlined, stats: previewStats }
-  emit(projectId, "build:preview", { projectId, files: previewFiles, fullHtml: previewInlined, stats: previewStats })
+  build.result = { files: previewFiles, fullHtml: previewInlined, pages: editPages, stats: previewStats }
+  emit(projectId, "build:preview", { projectId, files: previewFiles, fullHtml: previewInlined, pages: editPages, stats: previewStats })
 
   // Phase 2: Reviewers check if edit satisfies the ask
-  emit(projectId, "build:phase", { phase: "review", agents: ["agent-designer", "agent-security", "agent-debug", "agent-auditor"] })
+  emit(projectId, "build:phase", { phase: "review", agents: ["agent-design-planner", "agent-designer", "agent-security", "agent-debug", "agent-auditor"] })
   console.log(`[Edit] Phase 2: Review (background)`)
 
-  // Capture screenshot for reviewers to see rendered site
+  // Capture screenshot for designer and design planner to see rendered site
   const reviewerShot = await captureScreenshot(projectId).catch(() => null)
   const reviewerImages = reviewerShot ? [reviewerShot] : []
 
-  const reviewRoles = ["agent-designer", "agent-security", "agent-debug", "agent-auditor"]
+  const reviewRoles = ["agent-design-planner", "agent-designer", "agent-security", "agent-debug", "agent-auditor"]
   await Promise.all(
-    reviewRoles.map(role =>
-      runAgent(role, projectId,
-        `The user asked: "${prompt}"\n${selectedElement ? `Target element: <${selectedElement.tag}${selectedElement.id ? `#${selectedElement.id}` : ""}${selectedElement.classes?.length ? `.${selectedElement.classes.join(".")}` : ""}>\n` : ""}Read the current index.html, styles.css, script.js using read_file. Review whether the edit was applied correctly and the site still works. Write your findings to your review .md file using write_file. If everything looks correct and no issues, write "ALL CLEAR - no issues remaining".`,
-        dir,
-        reviewerImages
-      ).then(r => { agentStats[role] = r.stats; return r })
-    )
+    reviewRoles.map(role => {
+      const hasImage = (role === "agent-designer" || role === "agent-design-planner") && reviewerImages.length > 0
+      const elementContext = selectedElement
+        ? `Target element: <${selectedElement.tag}${selectedElement.id ? `#${selectedElement.id}` : ""}${selectedElement.classes?.length ? `.${selectedElement.classes.join(".")}` : ""}>`
+        : ""
+      const prompt = (role === "agent-designer" || role === "agent-design-planner")
+        ? `The user asked: "${prompt}"\n${elementContext ? elementContext + "\n" : ""}A screenshot of the rendered site is attached. Study it carefully — look for visual problems: broken layout, overlapping elements, missing images, wrong colors, bad typography, poor spacing, responsiveness issues, anything that looks off.\n\nAlso read the code files using read_file — use list_dir first to discover all .html, .css, .js files in the project.\n\nWrite your review to your .md file using write_file. List every visual and code problem you find with severity (P0/P1/P2). If the site looks perfect, write "ALL CLEAR - no issues remaining".`
+        : `The user asked: "${prompt}"\n${elementContext ? elementContext + "\n" : ""}Use list_dir to discover all project files. Read all .html, .css, .js files using read_file. Review whether the edit was applied correctly and the site still works. Write your findings to your review .md file using write_file. If everything looks correct and no issues, write "ALL CLEAR - no issues remaining".`
+      return runAgent(role, projectId, prompt, dir, hasImage ? reviewerImages : [])
+        .then(r => { agentStats[role] = r.stats; return r })
+    })
   )
 
   // Phase 3: Unifier convergence check
@@ -717,11 +728,12 @@ async function runEdit(prompt, projectId, dir, selectedElement) {
 
   // Collect final results
   const files = collectFiles(dir)
-  const htmlFile = files.find(f => f.path.endsWith(".html"))
-  const inlinedHtml = inlineAssets(htmlFile?.content || "", files)
+  const finalEditPages = inlineAllPages(files)
+  const finalEditIndexPage = finalEditPages.find(p => p.path === "index.html") || finalEditPages[0]
+  const inlinedHtml = finalEditIndexPage?.html || ""
   const stats = buildStats(projectId, files, agentStats, Date.now() - buildStart)
 
-  build.result = { files, fullHtml: inlinedHtml, stats }
+  build.result = { files, fullHtml: inlinedHtml, pages: finalEditPages, stats }
   build.status = "complete"
 
   emit(projectId, "build:complete", { projectId, result: build.result })
@@ -775,6 +787,15 @@ function inlineAssets(html, files) {
   )
 
   return result
+}
+
+function inlineAllPages(files) {
+  const htmlFiles = files.filter(f => f.path.endsWith(".html"))
+  const pages = []
+  for (const f of htmlFiles) {
+    pages.push({ path: f.path, html: inlineAssets(f.content, files) })
+  }
+  return pages
 }
 
 // ── API Endpoints ─────────────────────────────────────────────

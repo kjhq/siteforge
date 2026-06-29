@@ -1,17 +1,23 @@
 import { useRef, useEffect, useState } from "react"
-import { MousePointer, X, Smartphone, Monitor, Eye, Pointer } from "lucide-react"
+import { MousePointer, X, Smartphone, Monitor, Eye, Pointer, FileText, ChevronDown } from "lucide-react"
 
-export default function CodePreview({ projectId, previewVersion, onElementSelect, selectedElement }) {
+export default function CodePreview({ projectId, previewVersion, onElementSelect, selectedElement, pages, currentPage, onPageChange }) {
   const iframeRef = useRef(null)
   const [copied, setCopied] = useState(false)
   const [hovered, setHovered] = useState(null)
   const [mobileView, setMobileView] = useState(false)
   const [inspectMode, setInspectMode] = useState(true)
+  const [pageMenuOpen, setPageMenuOpen] = useState(false)
+
+  const htmlPages = pages?.filter(p => p.path.endsWith(".html")) || []
+  const hasMultiplePages = htmlPages.length > 1
+  const activePage = currentPage || "index.html"
 
   useEffect(() => {
     if (!projectId || !iframeRef.current) return
-    iframeRef.current.src = `/preview/${projectId}?v=${previewVersion}`
-  }, [projectId, previewVersion])
+    const pagePath = activePage === "index.html" ? "" : activePage
+    iframeRef.current.src = `/preview/${projectId}/${pagePath}?v=${previewVersion}`
+  }, [projectId, previewVersion, activePage])
 
   useEffect(() => {
     const handler = (e) => {
@@ -53,6 +59,35 @@ export default function CodePreview({ projectId, previewVersion, onElementSelect
       <div className="preview-header">
         <h3>Live Preview</h3>
         <div className="preview-controls">
+          {projectId && hasMultiplePages && (
+            <div className="page-selector">
+              <button
+                className="page-selector-trigger"
+                onClick={() => setPageMenuOpen(!pageMenuOpen)}
+              >
+                <FileText size={12} />
+                <span>{activePage.replace(".html", "")}</span>
+                <ChevronDown size={12} className={pageMenuOpen ? "open" : ""} />
+              </button>
+              {pageMenuOpen && (
+                <div className="page-selector-dropdown">
+                  {htmlPages.map(p => (
+                    <button
+                      key={p.path}
+                      className={`page-selector-item ${p.path === activePage ? "active" : ""}`}
+                      onClick={() => {
+                        onPageChange?.(p.path)
+                        setPageMenuOpen(false)
+                      }}
+                    >
+                      <FileText size={12} />
+                      <span>{p.path.replace(".html", "")}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {projectId && (
             <>
               <button

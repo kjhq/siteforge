@@ -4,6 +4,7 @@ import CodePreview from "./components/CodePreview"
 import MetricsPanel from "./components/MetricsPanel"
 import ProjectSelector from "./components/ProjectSelector"
 import ChangelogPanel from "./components/ChangelogPanel"
+import FileTree from "./components/FileTree"
 import { AlertTriangle } from "lucide-react"
 
 function describeElement(el) {
@@ -28,6 +29,8 @@ export default function App() {
   const [liveTime, setLiveTime] = useState(0)
   const [projects, setProjects] = useState([])
   const [changelog, setChangelog] = useState([])
+  const [pages, setPages] = useState([])
+  const [currentPage, setCurrentPage] = useState(null)
 
   const currentProjectRef = useRef(null)
   const abortRef = useRef(null)
@@ -48,6 +51,8 @@ export default function App() {
     if (!currentProjectRef.current) setPreviewProjectId(null)
     setAgentStatuses({})
     setChangelog([])
+    setPages([])
+    setCurrentPage(null)
 
     if (timerRef.current) clearInterval(timerRef.current)
     timerRef.current = setInterval(() => setLiveTime(p => +(p + 0.1).toFixed(1)), 100)
@@ -129,6 +134,7 @@ export default function App() {
               } else if (eventType === "build:preview") {
                 setPreviewProjectId(projectId)
                 setPreviewVersion(v => v + 1)
+                if (data.pages) setPages(data.pages)
               } else if (eventType === "build:converged") {
                 // Loop converged
               } else if (eventType === "build:changelog") {
@@ -151,8 +157,10 @@ export default function App() {
                       fullHtml: res.fullHtml || "",
                       project: currentProjectRef.current,
                       files: res.files || [],
+                      pages: res.pages || [],
                       stats: res.stats,
                     })
+                    if (res.pages) setPages(res.pages)
                     setLiveTokens({
                       input: res.stats?.input_tokens || 0,
                       output: res.stats?.completion_tokens || 0,
@@ -205,6 +213,8 @@ export default function App() {
       setSelectedElement(null)
       setResult(null)
       setPendingText("")
+      setPages([])
+      setCurrentPage(null)
       return
     }
 
@@ -288,9 +298,17 @@ export default function App() {
           previewVersion={previewVersion}
           onElementSelect={handleElementSelect}
           selectedElement={selectedElement}
+          pages={pages}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
         />
 
         <div className="sidebar-right">
+          <FileTree
+            projectId={previewProjectId}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+          />
           <MetricsPanel
             agentStats={agentStats}
             liveTokens={liveTokens}
