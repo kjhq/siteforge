@@ -105,7 +105,7 @@ export default function App() {
                     const elapsed = ((performance.now() - startTime) / 1000).toFixed(2)
 
                     const newResult = {
-                      fullHtml: htmlFile?.content || res.fullHtml || "",
+                      fullHtml: res.fullHtml || htmlFile?.content || "",
                       project,
                       files: res.files || [],
                       timingValue: elapsed,
