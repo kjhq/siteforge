@@ -232,7 +232,7 @@ ${skillBlock}
 
   let messages = [{ role: "user", content: prompt }]
   let fullText = ""
-  const agentStats = { wallMs: 0, ttftMs: null, inputTokens: 0, outputTokens: 0, toolCalls: 0 }
+  const agentStats = { wallMs: 0, ttftMs: null, inputTokens: 0, outputTokens: 0, toolCalls: 0, requestCount: 0, totalRequestTps: 0 }
   const agentStart = Date.now()
 
   while (true) {
@@ -249,6 +249,10 @@ ${skillBlock}
     if (result.usage) {
       agentStats.inputTokens += result.usage.input
       agentStats.outputTokens += result.usage.output
+    }
+    agentStats.requestCount++
+    if (result.wallMs > 0 && result.usage?.output > 0) {
+      agentStats.totalRequestTps += (result.usage.output / result.wallMs) * 1000
     }
     agentStats.wallMs = Date.now() - agentStart
 
@@ -302,6 +306,8 @@ ${skillBlock}
     inputTokens: agentStats.inputTokens,
     outputTokens: agentStats.outputTokens,
     toolCalls: agentStats.toolCalls,
+    requestCount: agentStats.requestCount,
+    totalRequestTps: agentStats.totalRequestTps,
   })
   return { text: fullText, stats: agentStats }
 }
@@ -310,7 +316,9 @@ ${skillBlock}
 function buildStats(projectId, files, agentStats, wallMs) {
   const totalInput = Object.values(agentStats).reduce((s, a) => s + (a.inputTokens || 0), 0)
   const totalOutput = Object.values(agentStats).reduce((s, a) => s + (a.outputTokens || 0), 0)
-  const cerebrasTps = wallMs > 0 ? Math.round((totalOutput / wallMs) * 1000) : 0
+  const totalRequestCount = Object.values(agentStats).reduce((s, a) => s + (a.requestCount || 0), 0)
+  const totalRequestTps = Object.values(agentStats).reduce((s, a) => s + (a.totalRequestTps || 0), 0)
+  const cerebrasTps = totalRequestCount > 0 ? Math.round(totalRequestTps / totalRequestCount) : 0
   const htmlFile = files.find(f => f.path.endsWith(".html"))
   return {
     gpu_baseline_tps: GPU_BASELINE.tps,
