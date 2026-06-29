@@ -1,21 +1,7 @@
 import { ScrollText } from "lucide-react"
 
-export default function ChangelogPanel({ changelog, loading }) {
-  if (!changelog || changelog.length === 0) {
-    if (!loading) return null
-    return (
-      <div className="changelog-panel">
-        <div className="cl-header">
-          <ScrollText size={14} />
-          <span>CHANGELOG</span>
-          <span className="cl-live-dot" />
-        </div>
-        <div className="cl-entries">
-          <div className="cl-waiting">Waiting for changes...</div>
-        </div>
-      </div>
-    )
-  }
+export default function ChangelogPanel({ changelog }) {
+  if (!changelog || changelog.length === 0) return null
 
   return (
     <div className="changelog-panel">

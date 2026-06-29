@@ -312,7 +312,7 @@ export default function App() {
           />
         </div>
 
-        <ChangelogPanel changelog={changelog} loading={loading} />
+        <ChangelogPanel changelog={changelog} />
       </div>
     </div>
   )

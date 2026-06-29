@@ -224,27 +224,28 @@ function launchChangelog(projectId, dir, round, beforeScreenshot, afterScreensho
       const fileSummary = changedFiles.map(f => f.path).join(", ")
       const systemPrompt = `You are a changelog writer. You compare before/after screenshots of a website and list every visible change in bullet points. Be specific and concrete — mention exact elements, colors, text content, layout shifts. Format as markdown bullet points. Do NOT add commentary — just list the changes.`
 
-      const messages = [{
-        role: "user",
-        content: [
-          {
-            type: "image_url",
-            image_url: {
-              url: `data:image/jpeg;base64,${beforeScreenshot}`,
-            },
-          },
-          {
-            type: "image_url",
-            image_url: {
-              url: `data:image/jpeg;base64,${afterScreenshot}`,
-            },
-          },
-          {
-            type: "text",
-            text: `These are BEFORE and AFTER screenshots of round ${round} of a website build. Changed files: ${fileSummary}\n\nList every visible change as bullet points. Start each line with "• ". Be specific: mention exact elements, colors, text, layout shifts.`,
-          },
-        ],
-      }]
+      const content = []
+      if (beforeScreenshot && afterScreenshot) {
+        content.push({
+          type: "image_url",
+          image_url: { url: `data:image/jpeg;base64,${beforeScreenshot}` },
+        })
+        content.push({
+          type: "image_url",
+          image_url: { url: `data:image/jpeg;base64,${afterScreenshot}` },
+        })
+        content.push({
+          type: "text",
+          text: `These are BEFORE and AFTER screenshots of round ${round} of a website build. Changed files: ${fileSummary}\n\nList every visible change as bullet points. Start each line with "• ". Be specific: mention exact elements, colors, text, layout shifts.`,
+        })
+      } else {
+        content.push({
+          type: "text",
+          text: `Round ${round} of a website build. Changed files: ${fileSummary}\n\nDescribe what likely changed based on the file names and context. Start each line with "• ". Be specific about what each file change implies visually.`,
+        })
+      }
+
+      const messages = [{ role: "user", content }]
 
       const result = await piAgentComplete(MODEL, messages, systemPrompt, [], "auto", projectId, "agent-changelog")
 
@@ -554,12 +555,9 @@ async function runBuild(prompt, projectId, dir) {
   agentStats["agent-coder"] = codeResult.stats
   console.log(`[Agent] Coder done`)
 
-  // Capture "after" screenshot and fire changelog (detached)
-  try {
-    const afterScreenshot = await captureScreenshot(projectId)
-    const changedFiles = collectFiles(dir).map(f => f.path)
-    launchChangelog(projectId, dir, 1, beforeScreenshot, afterScreenshot, changedFiles)
-  } catch (err) { console.error(`[Changelog] Screenshot error:`, err.message) }
+  // Fire changelog immediately (detached) — screenshots best-effort
+  const afterShot = await captureScreenshot(projectId).catch(() => null)
+  launchChangelog(projectId, dir, 1, beforeScreenshot, afterShot, collectFiles(dir).map(f => f.path))
 
   // ── EARLY PREVIEW ──
   const previewFiles = collectFiles(dir)
@@ -602,7 +600,7 @@ async function runBuild(prompt, projectId, dir) {
 
     const loopBeforeScreenshot = beforeScreenshot
     beforeScreenshot = null
-    try { beforeScreenshot = await captureScreenshot(projectId) } catch {}
+    beforeScreenshot = await captureScreenshot(projectId).catch(() => null)
 
     const loopCode = await runAgent("agent-coder", projectId,
       `Read unified-spec.md using read_file, then apply remaining fixes to the code files using write_file. Output COMPLETE updated files.`,
@@ -610,12 +608,9 @@ async function runBuild(prompt, projectId, dir) {
     )
     agentStats["agent-coder"] = loopCode.stats
 
-    // Fire changelog for this iteration (detached)
-    try {
-      const afterScreenshot = await captureScreenshot(projectId)
-      const changedFiles = collectFiles(dir).map(f => f.path)
-      launchChangelog(projectId, dir, iteration + 1, loopBeforeScreenshot, afterScreenshot, changedFiles)
-    } catch (err) { console.error(`[Changelog] Loop screenshot error:`, err.message) }
+    // Fire changelog for this iteration (detached) — screenshots best-effort
+    const loopAfterShot = await captureScreenshot(projectId).catch(() => null)
+    launchChangelog(projectId, dir, iteration + 1, loopBeforeScreenshot, loopAfterShot, collectFiles(dir).map(f => f.path))
 
     const afterFiles = getFileNames(dir)
     if (beforeFiles === afterFiles) {
@@ -665,12 +660,9 @@ async function runEdit(prompt, projectId, dir, selectedElement) {
   agentStats["agent-coder"] = codeResult.stats
   console.log(`[Edit] Coder done`)
 
-  // Capture "after" screenshot and fire changelog (detached)
-  try {
-    const afterScreenshot = await captureScreenshot(projectId)
-    const changedFiles = collectFiles(dir).map(f => f.path)
-    launchChangelog(projectId, dir, 1, beforeScreenshot, afterScreenshot, changedFiles)
-  } catch (err) { console.error(`[Changelog] Screenshot error:`, err.message) }
+  // Fire changelog immediately (detached) — screenshots best-effort
+  const afterShot = await captureScreenshot(projectId).catch(() => null)
+  launchChangelog(projectId, dir, 1, beforeScreenshot, afterShot, collectFiles(dir).map(f => f.path))
 
   // ── EARLY PREVIEW ──
   const previewFiles = collectFiles(dir)
