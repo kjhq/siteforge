@@ -10,13 +10,6 @@ describe a website. siteforge plans, reviews, codes, and iterates — 6 speciali
 
 `react` `node.js` `cerebras` `gemma 4`
 
----
-
-## demo
-
-[![watch demo](https://img.shields.io/badge/watch_demo-60s-red?style=flat-square)]()
-
-*coming soon — record a 60s screen capture and replace the link above.*
 
 ---
 
@@ -106,7 +99,7 @@ npm install
 cd server && npm install && cd ..
 
 # create .env file in the project root
-echo 'CEREBRAS_API_KEY=your-key-here' > .env
+echo 'VITE_CEREBRAS_API_KEY=your-key-here' > .env
 
 # start both servers
 npm run dev
@@ -119,7 +112,8 @@ npm run dev
 
 ```bash
 npm run build        # build frontend to dist/
-node server/index.js # serve api + built frontend
+npm run dev:server   # api on :3001
+npm run preview      # serve dist/ (proxies /api and /preview to :3001)
 ```
 
 ---
@@ -192,7 +186,7 @@ siteforge runs **6 specialized ai agents in a coordinated pipeline** on gemma 4 
 
 - **multi-agent collaboration**: design planner → 4 parallel reviewers → unifier → coder → review loop. each agent has a distinct role, tool access, and output format.
 - **multimodal intelligence**: design agents receive **full-page screenshots** (base64 jpeg) of the rendered website and identify visual problems — broken layouts, color issues, missing images — before writing their reviews.
-- **cerebras speed in action**: the metrics panel shows real-time tok/s (1000-1500 tok/s on gemma 4 31b) with side-by-side gpu baseline comparison. a build that would take 2+ minutes on gpu finishes in 30-45 seconds.
+- **cerebras speed in action**: the metrics panel shows real-time tok/s (1000-1500 tok/s on gemma 4 31b) against a fixed gpu baseline figure (126 tok/s). observed builds finish in 30-45 seconds.
 
 ---
 
